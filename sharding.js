@@ -1,8 +1,8 @@
-const Discord = require('discord.js')
+const { ShardingManager } = require('discord.js')
 const database = require('./database.js')
 let preloaded = false;
 
-const manager = new Discord.ShardingManager('./app.js', { totalShards: "auto", respawn: true, token: JSON.parse(require("fs").readFileSync("./config.json")).token })
+const manager = new ShardingManager('./app.js', { totalShards: "auto", respawn: true, token: process.env.TOKEN })//JSON.parse(require("fs").readFileSync("./config.json")).token })
 manager.spawn();
 manager.on('launch', shard => {
     console.log("Shard " + shard.id + " starting.")
