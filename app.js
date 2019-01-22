@@ -98,10 +98,10 @@ client.on('message', async (message) => {
                 })
                 message.delete()
             } else await message.channel.fetchWebhooks().then(async (webhooks) => {
-                let foundHook = webhooks.find((webhook) => webhook.name == 'Countr Reposting')
+                let foundHook = webhooks.find((webhook) => webhook.name == `${client.user.username} Reposting`)
                 
                 if (!foundHook) { // create a new webhook
-                    let webhook = await message.channel.createWebhook('Countr Reposting')
+                    let webhook = await message.channel.createWebhook(`${client.user.username} Reposting`)
                     countMsg = await webhook.send(message.content, {
                         username: message.author.username,
                         avatarURL: message.author.displayAvatarURL().split('?')[0]
