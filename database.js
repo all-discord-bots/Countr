@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-mongoose.connect(JSON.parse(require("fs").readFileSync("./config.json")).database_uri, { useNewUrlParser: true });
+mongoose.connect(process.env.database_uri/*JSON.parse(require("fs").readFileSync("./config.json")).database_uri*/, { useNewUrlParser: true });
 
 const guildSchema = mongoose.Schema({
   guildid: String,
