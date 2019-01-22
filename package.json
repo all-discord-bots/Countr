@@ -7,7 +7,7 @@
     "blapi": "^1.0.0",
     "bufferutil": "^4.0.1",
     "dblapi.js": "^2.3.0",
-    "discord.js": "^11.4.2",
+    "discord.js": "github:discordjs/discord.js#master",
     "erlpack": "github:hammerandchisel/erlpack",
     "fs": "0.0.2",
     "mongoose": "^5.4.6",
