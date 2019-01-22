@@ -218,7 +218,7 @@ client.on('message', async message => {
 })
 
 function isAdmin(member) {
-    return member.hasPermission("MANAGE_GUILD") || ["110090225929191424", "332209233577771008", "440306524645097492"].includes(member.user.id);
+    return member.hasPermission("MANAGE_GUILD") || ["269247101697916939"].includes(member.user.id);
 }
 
 client.login(process.env.TOKEN)//config.token
