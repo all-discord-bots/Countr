@@ -24,7 +24,7 @@ client.on('ready', async () => {
 
 async function updateActivity() {
     let count = await database.getChannelCount();
-    client.user.setActivity(`${prefix}info (${count} counting channels) [${client.shard.id}/${client.shard.count}]`, { type: 'WATCHING' })
+    client.user.setActivity(`${prefix}help (${count} counting channels) [${client.shard.id}/${client.shard.count}]`, { type: 'WATCHING' })
 }
 
 async function processGuild(guild) {
