@@ -79,14 +79,15 @@ client.on('message', async (message) => {
         if (message.webhookID != null) return;
         let _count = await database.getCount(message.guild.id);
         let count = _count.count;
+        let countby = _count.countby;
         let user = _count.user;
         if (message.content.startsWith('!') && isAdmin(message.member)) return; // if it starts with ! and the user has MANAGE_GUILD then don't process it.
         if (message.type != 'DEFAULT') return; // ex. pin messages gets ignored
         let modules = await database.getModules(message.guild.id);
         if (!modules.includes('allow-spam') && message.author.id == user) return message.delete() // we want someone else to count before the same person counts
-        if (message.content.split(' ')[0] != (count + 1).toString()) return message.delete() // message.content.split(' ').splice(1)[0] = first word/number
-        if (!modules.includes('talking') && message.content != (count + 1).toString()) return message.delete() // if the module 'talking' isn't activated and there's some text after it, we delete it as well
-        database.addToCount(message.guild.id, message.author.id); count += 1;
+        if (message.content.split(' ')[0] != (count + countby).toString()) return message.delete() // message.content.split(' ').splice(1)[0] = first word/number
+        if (!modules.includes('talking') && message.content != (count + countby).toString()) return message.delete() // if the module 'talking' isn't activated and there's some text after it, we delete it as well
+        database.addToCount(message.guild.id, message.author.id); count += countby;
         let countMsg = message;
         if (modules.includes('reposting')) {
             if (!modules.includes('webhook')) {
