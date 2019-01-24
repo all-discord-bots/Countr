@@ -195,7 +195,7 @@ module.exports = function(client) { return {
             Guild.find({}, (err, guilds) => {
                 if (err) return reject(err);
                 let count = 0;
-                guilds.forEach((guild) => { if (guild.channel != '') count += guild.countby; })
+                guilds.forEach((guild) => { if (guild.channel != '') count += 1; })
 
                 return resolve(count);
             })
