@@ -208,7 +208,7 @@ client.on('message', async (message) => {
         return database.setRole(message.guild.id, mode, count, duration, role.id)
             .then(() => { botMsg.edit(`:white_check_mark: I will give the role called ${role.name} when ${(mode == 'each' ? `each ${count} is counted` : `someone reach ${count}`)} and the role will ${(duration == 'permanent' ? 'stay permanent until removed or a new role reward is set.' : 'stay until someone else get the role.')}`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
-    } else if (content.startsWith(`${prefix}set-starting-count`) || content.startsWith(`${prefix}setstartingcount`) || content.startsWith(`${prefix}startingcount`) || content.startsWith(`${prefix}starting-count`) || content.startsWith(`${prefix}set-start-count`) || content.startsWith(`${prefix}setstartcount`) || content.startsWith(`${prefix}set-count`) || content.startsWith(`${prefix}setcount`)) {
+    } else if (content.startsWith(`${prefix}set-starting-count`) || content.startsWith(`${prefix}setstartingcount`) || content.startsWith(`${prefix}startingcount`) || content.startsWith(`${prefix}starting-count`) || content.startsWith(`${prefix}set-start-count`) || content.startsWith(`${prefix}setstartcount`)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         let count = parseInt(message.content.split(' ').splice(1)[0]) || -1;
         if (isNaN(count)) return message.channel.send(`:x: Invalid count. Use \`${prefix}set <count>\``);
@@ -217,7 +217,7 @@ client.on('message', async (message) => {
         return database.setCount(message.guild.id, count)
             .then(() => { botMsg.edit(`:white_check_mark: The count is set to ${count}.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
-    } else if (content.startsWith(`${prefix}set-count-by`) || content.startsWith(`${prefix}setcountby`) || content.startsWith(`${prefix}countingby`) || content.startsWith(`${prefix}counting-by`) || content.startsWith(`${prefix}setcountingby`) || content.startsWith(`${prefix}set-counting-by`) || content.startsWith(`${prefix}count-by`) || content.startsWith(`${prefix}countby`)) {
+    } else if (content.startsWith(`${prefix}set-count-by`) || content.startsWith(`${prefix}setcountby`) || content.startsWith(`${prefix}countingby`) || content.startsWith(`${prefix}counting-by`) || content.startsWith(`${prefix}setcountingby`) || content.startsWith(`${prefix}set-counting-by`)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         let by = parseInt(message.content.split(' ').splice(1)[0]) || -1;
         if (by === 0 || isNaN(by)) return message.channel.send(`:x: Invalid amount. Use \`${prefix}set-count-by <by>\``);
