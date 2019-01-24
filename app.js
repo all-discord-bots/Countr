@@ -210,7 +210,7 @@ client.on('message', async (message) => {
     } else if (content.startsWith(`${prefix}set`)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         let count = parseInt(message.content.split(' ').splice(1)[0]) || -1;
-        if (count < 0) return message.channel.send(`:x: Invalid count. Use \`${prefix}set <count>\``);
+        //if (count < 0) return message.channel.send(`:x: Invalid count. Use \`${prefix}set <count>\``);
 
         let botMsg = await message.channel.send(':hotsprings: Saving...')
         return database.setCount(message.guild.id, count)
