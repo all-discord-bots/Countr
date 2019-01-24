@@ -220,7 +220,7 @@ client.on('message', async (message) => {
     } else if (content.startsWith(`${prefix}set-count-by`) || content.startsWith(`${prefix}setcountby`) || content.startsWith(`${prefix}countingby`) || content.startsWith(`${prefix}counting-by`) || content.startsWith(`${prefix}setcountingby`) || content.startsWith(`${prefix}set-counting-by`) || content.startsWith(`${prefix}count-by`) || content.startsWith(`${prefix}countby`)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         let by = parseInt(message.content.split(' ').splice(1)[0]) || -1;
-        if (count === 0) return message.channel.send(`:x: Invalid amount. Use \`${prefix}set-count-by <by>\``);
+        if (by === 0 || isNaN(by)) return message.channel.send(`:x: Invalid amount. Use \`${prefix}set-count-by <by>\``);
 
         let botMsg = await message.channel.send(':hotsprings: Saving...')
         return database.setCountBy(message.guild.id, by)
