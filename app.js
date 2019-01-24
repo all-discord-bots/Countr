@@ -66,6 +66,26 @@ async function processGuild(guild) {
 }
 
 client.on('message', async (message) => {
+    let cmd_prefix;
+	if (!message.content.startsWith(client.user.toString())) {
+		cmd_prefix = prefix;
+	} else {
+		cmd_prefix = client.user.toString();
+    }
+    if (!message.content.startsWith(cmd_prefix.trim())) return;
+    let split = message.content.substr(cmd_prefix.trim().length).trim().split(' ');
+    let split1 = message.content.substr(cmd_prefix.trim()).trim().split(' ');
+    let spli;
+		if (cmd_prefix !== client.user.toString()) {
+			spli = new RegExp(`\\${cmd_prefix.trim().split('').join('\\')}`, 'gi');
+		} else {
+			spli = new RegExp(cmd_prefix.trim(),'gi');
+    }
+    if (!split1[0].match(spli)) spli = new RegExp(cmd_prefix.trim(), 'gi');
+	if (split1[0].match(spli).length !== 1 || split1[0].match(spli)[0].length !== cmd_prefix.trim().length) return;
+	let base = split[0].toLowerCase(); // the command
+    let args = split.slice(1); // the commands arguments
+    
     let content = message.content.toLowerCase();
 
     if (message.author.id == client.user.id) return;
@@ -126,7 +146,7 @@ client.on('message', async (message) => {
 
     if (message.author.bot) return;
 
-    if (content.startsWith(`${prefix}link`)) {
+    if (['link','linkchannel','link-channel'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
         let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
@@ -140,20 +160,20 @@ client.on('message', async (message) => {
         return database.saveCountingChannel(message.guild.id, channel.id)
             .then(() => { botMsg.edit(`:white_check_mark: From now on, ${(channel.id == message.channel.id ? 'this channel' : channel.toString())} will be used for counting.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
-    } else if (content.startsWith(`${prefix}unlink`)) {
+    } else if (['unlink','unlink-channel','unlinkchannel'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         let botMsg = await message.channel.send(':hotsprings: Unlinking...')
         return database.saveCountingChannel(message.guild.id, '0')
             .then(() => { botMsg.edit(':white_check_mark: Unlinked the counting channel.') })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
-    } else if (content.startsWith(`${prefix}reset`)) {
+    } else if (['reset','reset-count','resetcount'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         
         let botMsg = await message.channel.send(':hotsprings: Resetting...')
         return database.setCount(message.guild.id, 0)
             .then(() => { botMsg.edit(':white_check_mark: Counting has been reset.') })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
-    } else if (content.startsWith(`${prefix}toggle`)) {
+    } else if (['toggle-module','togglemodule','toggle','toggle-setting','togglesetting'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         let arg = message.content.split(' ').splice(1)[0] // gets the first arg and makes it lower case
         if (!arg) return message.channel.send(`:clipboard: Modules: \`${allModules.join('\`, \`')}\` - To read more about them, go to the documentation page, \`${prefix}info\` for link`)
@@ -168,7 +188,7 @@ client.on('message', async (message) => {
         } else {
             return message.channel.send(':x: Module does not exist.')
         }
-    } else if (content.startsWith(`${prefix}subscribe`)) {
+    } else if (['subscribe'].includes(base)) {
         let number = parseInt(message.content.split(' ').splice(1)[0])
         if (!number) return message.channel.send(':x: Invalid count.')
 
@@ -179,7 +199,7 @@ client.on('message', async (message) => {
         return database.subscribe(message.guild.id, message.author.id, number)
             .then(() => { botMsg.edit(`:white_check_mark: I will notify you when this server reach ${number} total counts.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
-    } else if (content.startsWith(`${prefix}topic`)) {
+    } else if (['set-topic','settopic','topic'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         let topic = message.content.split(' ').splice(1).join(' ');
 
@@ -190,7 +210,7 @@ client.on('message', async (message) => {
         }).catch(() => {
             return botMsg.edit(':anger: An unknown error occoured. Try again later.')
         })
-    } else if (content.startsWith(`${prefix}role`)) {
+    } else if (['role'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         let mode = message.content.split(' ').splice(1)[0];
         let count = parseInt(message.content.split(' ').splice(2)[0]);
@@ -208,7 +228,7 @@ client.on('message', async (message) => {
         return database.setRole(message.guild.id, mode, count, duration, role.id)
             .then(() => { botMsg.edit(`:white_check_mark: I will give the role called ${role.name} when ${(mode == 'each' ? `each ${count} is counted` : `someone reach ${count}`)} and the role will ${(duration == 'permanent' ? 'stay permanent until removed or a new role reward is set.' : 'stay until someone else get the role.')}`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
-    } else if (content.startsWith(`${prefix}set-starting-count`) || content.startsWith(`${prefix}setstartingcount`) || content.startsWith(`${prefix}startingcount`) || content.startsWith(`${prefix}starting-count`) || content.startsWith(`${prefix}set-start-count`) || content.startsWith(`${prefix}setstartcount`)) {
+    } else if (['set-starting-count','setstartingcount','startingcount','starting-count','set-count','setcount','set-start-count','setstartcount','startcount','start-count'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         let count = parseInt(message.content.split(' ').splice(1)[0]) || -1;
         if (isNaN(count)) return message.channel.send(`:x: Invalid count. Use \`${prefix}set <count>\``);
@@ -217,7 +237,7 @@ client.on('message', async (message) => {
         return database.setCount(message.guild.id, count)
             .then(() => { botMsg.edit(`:white_check_mark: The count is set to ${count}.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
-    } else if (content.startsWith(`${prefix}set-count-by`) || content.startsWith(`${prefix}setcountby`) || content.startsWith(`${prefix}countingby`) || content.startsWith(`${prefix}counting-by`) || content.startsWith(`${prefix}setcountingby`) || content.startsWith(`${prefix}set-counting-by`)) {
+    } else if (['set-count-by','set-counting-by','setcountby','setcountingby','count-by','counting-by','countby','countingby'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         let by = parseInt(message.content.split(' ').splice(1)[0]) || -1;
         if (by === 0 || isNaN(by)) return message.channel.send(`:x: Invalid amount. Use \`${prefix}set-count-by <by>\``);
@@ -226,12 +246,12 @@ client.on('message', async (message) => {
         return database.setCountBy(message.guild.id, by)
             .then(() => { botMsg.edit(`:white_check_mark: You will now count by ${by}.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
-    } else if (RegExp(`^(<@!?${client.user.id}>)`).test(content)) {
+    } else if (RegExp(`^(<@!?${client.user.id}>)`).test(content) || base === 'prefix') {
             return message.channel.send(`:wave: My prefix is \`${prefix}\`, for help type \`${prefix}help\`.`)
-    } else if (content.startsWith(`${prefix}ping`)) {
+    } else if (['ping'].includes(base)) {
             let msg = await message.channel.send(':part_alternation_mark: Pinging...')
             return msg.edit(`:signal_strength: Latency is \`${(msg.createdTimestamp - message.createdTimestamp)}ms\` and API Latency is \`${Math.round(client.ws.ping)}ms\`.`)
-    } else if (content.startsWith(`${prefix}help`)) {
+    } else if (['help','cmds','commands'].includes(base)) {
         message.channel.send({
             embed: {
                 title: 'Commands',
