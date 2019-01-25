@@ -19,7 +19,8 @@ client.on('ready', async () => {
         updateActivity()
     }, 60000)
     
-    client.guilds.forEach(processGuild)
+    //client.guilds.forEach(processGuild)
+    client.channels.filter((channel) => ['text'].includes(channel.type) && !channel.deleted).forEach(processGuild);
 })
 
 async function updateActivity() {
@@ -27,17 +28,18 @@ async function updateActivity() {
     client.user.setActivity(`${prefix}help (${count} counting channels) [${client.shard.id}/${client.shard.count}]`, { type: 'WATCHING' })
 }
 
-async function processGuild(guild) {
+async function processGuild(channel) {
+    let guild = channel.guild;
     disabledGuilds.push(guild.id);
-    let modules = await database.getModules(guild.id);
+    let modules = await database.getModules(guild.id, channel.id);
     if (!modules.includes('recover')) return disabledGuilds = disabledGuilds.filter((g) => g != guild.id);
 
-    let countingChannel = await database.getCountingChannel(guild.id);
-    let channel = guild.channels.get(countingChannel)
+    let countingChannel = await database.getCountingChannel(guild.id, channel.id);
+    //let channel = guild.channels.get(countingChannel)
 
-    if (channel) {
-        let _count = await database.getCount(guild.id);
-        let messages = await channel.fetchMessages({ limit: 100, after: _count.message })
+    if (guild.channels.has(countingChannel)) {
+        let _count = await database.getCount(guild.id, channel.id);
+        let messages = await channel.messages.fetch({ limit: 100, after: _count.message })//fetchMessages({ limit: 100, after: _count.message })
         if (messages.array().length < 1) return disabledGuilds = disabledGuilds.filter((g) => g != guild.id);
 
         let botMsg = await channel.send('**Making channel ready for counting..**\n:warning: Locking channel.')
@@ -47,8 +49,8 @@ async function processGuild(guild) {
         let processing = true;
         let fail = false;
         while (processing) {
-            let _count = await database.getCount(guild.id);
-            let messages = await channel.fetchMessages({ limit: 100, after: _count.message })
+            let _count = await database.getCount(guild.id, channel.id);
+            let messages = await channel.messages.fetch({ limit: 100, after: _count.message })//fetchMessages({ limit: 100, after: _count.message })
             messages = messages.filter((m) => m.id != botMsg.id);
             if (messages.array().length < 1) processing = false;
             else await channel.bulkDelete(messages)
@@ -92,22 +94,22 @@ client.on('message', async (message) => {
     
     if (!message.guild) return; // if its in a DM, we don't want it to trigger any other command. If it's ${prefix}help or ${prefix}info, we don't want to send the info message above, but still not trigger any other command.
 
-    let countingChannel = await database.getCountingChannel(message.guild.id);
+    let countingChannel = await database.getCountingChannel(message.guild.id, message.channel.id);
     if (message.channel.id == countingChannel) {
         if (disabledGuilds.includes(message.guild.id)) return message.delete()
         if (message.author.bot && message.webhookID == null) return message.delete()
         if (message.webhookID != null) return;
-        let _count = await database.getCount(message.guild.id);
+        let _count = await database.getCount(message.guild.id, message.channel.id);
         let count = _count.count;
         let countby = _count.countby;
         let user = _count.user;
         if (message.content.startsWith('!') && isAdmin(message.member)) return; // if it starts with ! and the user has MANAGE_GUILD then don't process it.
         if (message.type != 'DEFAULT') return; // ex. pin messages gets ignored
-        let modules = await database.getModules(message.guild.id);
+        let modules = await database.getModules(message.guild.id, message.channel.id);
         if (!modules.includes('allow-spam') && message.author.id == user) return message.delete() // we want someone else to count before the same person counts
         if (message.content.split(' ')[0] != (count + countby).toString()) return message.delete() // message.content.split(' ').splice(1)[0] = first word/number
         if (!modules.includes('talking') && message.content != (count + countby).toString()) return message.delete() // if the module 'talking' isn't activated and there's some text after it, we delete it as well
-        database.addToCount(message.guild.id, message.author.id); count += countby;
+        database.addToCount(message.guild.id, message.channel.id, message.author.id); count += countby;
         let countMsg = message;
         if (modules.includes('reposting')) {
             if (!modules.includes('webhook')) {
@@ -137,8 +139,8 @@ client.on('message', async (message) => {
             }).catch();
         }
 
-        database.setLastMessage(message.guild.id, countMsg.id)
-        database.checkSubscribed(message.guild.id, count, message.author.id, countMsg.id)
+        database.setLastMessage(message.guild.id, message.channel.id, countMsg.id)
+        database.checkSubscribed(message.guild.id, message.channel.id, count, message.author.id, countMsg.id)
         database.checkRole(message.guild.id, count, message.author.id)
         
         return;
@@ -170,7 +172,7 @@ client.on('message', async (message) => {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         
         let botMsg = await message.channel.send(':hotsprings: Resetting...')
-        return database.setCount(message.guild.id, 0)
+        return database.setCount(message.guild.id, message.channel.id, 0)
             .then(() => { botMsg.edit(':white_check_mark: Counting has been reset.') })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['toggle-module','togglemodule','toggle','toggle-setting','togglesetting'].includes(base)) {
@@ -178,11 +180,11 @@ client.on('message', async (message) => {
         let arg = message.content.split(' ').splice(1)[0] // gets the first arg and makes it lower case
         if (!arg) return message.channel.send(`:clipboard: Modules: \`${allModules.join('\`, \`')}\` - To read more about them, go to the documentation page, \`${prefix}info\` for link`)
         arg = arg.toLowerCase()
-        let modules = await database.getModules(message.guild.id);
+        let modules = await database.getModules(message.guild.id, message.channel.id);
         if (allModules.includes(arg)) {
             let state = modules.includes(arg)
             let botMsg = await message.channel.send(`:hotsprings: ${(modules.includes(arg) ? 'Disabling' : 'Enabling')}...`)
-            return database.toggleModule(message.guild.id, arg)
+            return database.toggleModule(message.guild.id, message.channel.id, arg)
               .then(() => { botMsg.edit(`:white_check_mark: Module \`${arg}\` is now ${(state ? 'disabled' : 'enabled')}.`); })
               .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
         } else {
@@ -192,7 +194,7 @@ client.on('message', async (message) => {
         let number = parseInt(message.content.split(' ').splice(1)[0])
         if (!number) return message.channel.send(':x: Invalid count.')
 
-        let count = await database.getCount(message.guild.id);
+        let count = await database.getCount(message.guild.id, message.channel.id);
         if (number <= count.count) return message.channel.send(':warning: You can\'t subscribe to a count that\'s under the current count.')
 
         let botMsg = await message.channel.send(':hotsprings: Subscribing...')
@@ -204,7 +206,7 @@ client.on('message', async (message) => {
         let topic = message.content.split(' ').splice(1).join(' ');
 
         let botMsg = await message.channel.send(':hotsprings: Saving...')
-        return database.setTopic(message.guild.id, topic).then(() => {
+        return database.setTopic(message.guild.id, message.channel.id, topic).then(() => {
             if (topic.length == 0) return botMsg.edit(':white_check_mark: The topic has been cleared.')
             return botMsg.edit(':white_check_mark: The topic has been updated.')
         }).catch(() => {
@@ -234,7 +236,7 @@ client.on('message', async (message) => {
         if (isNaN(count)) return message.channel.send(`:x: Invalid count. Use \`${prefix}set <count>\``);
 
         let botMsg = await message.channel.send(':hotsprings: Saving...')
-        return database.setCount(message.guild.id, count)
+        return database.setCount(message.guild.id, message.channel.id, count)
             .then(() => { botMsg.edit(`:white_check_mark: The count is set to ${count}.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['set-count-by','set-counting-by','setcountby','setcountingby','count-by','counting-by','countby','countingby'].includes(base)) {
@@ -243,7 +245,7 @@ client.on('message', async (message) => {
         if (by === 0 || isNaN(by)) return message.channel.send(`:x: Invalid amount. Use \`${prefix}set-count-by <by>\``);
 
         let botMsg = await message.channel.send(':hotsprings: Saving...')
-        return database.setCountBy(message.guild.id, by)
+        return database.setCountBy(message.guild.id, message.channel.id, by)
             .then(() => { botMsg.edit(`:white_check_mark: You will now count by ${by}.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (RegExp(`^(<@!?${client.user.id}>)`).test(content) || base === 'prefix') {
