@@ -117,7 +117,7 @@ module.exports = function(client) { return {
             updateTopic(guildid, channelid, client)
         })
     },
-    setCountBy (guildid, channelid, by) {
+    setCountBy(guildid, channelid, by) {
       return new Promise(async function(resolve, reject) {
             await cacheGuild(guildid);
             savedGuilds[guildid].countingchannels[channelid].countby = by;
@@ -144,7 +144,7 @@ module.exports = function(client) { return {
     getModules(guildid, channelid) {
         return new Promise(async function(resolve, reject) {
             let guild = await cacheGuild(guildid);
-            resolve(guild.countingchannels[channelid].modules);
+            resolve(guild.countingchannels[channelid] ? guild.countingchannels[channelid].modules : []);
         })
     },
     subscribe(guildid, userid, count) {
