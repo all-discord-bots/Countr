@@ -251,7 +251,7 @@ module.exports = function(client) { return {
                 guildid: guildid
             }, async (err, roles) => {
                 if (err) return reject(err);
-                roles.forEach(roleInfo => {
+                roles.forEach((roleInfo) => {
                     if ((roleInfo.mode == 'each' && Number.isInteger(count / roleInfo.count)) || (roleInfo.mode == 'once' && count == roleInfo.count)) {
                         try {
                             if (roleInfo.duration == 'temporary') client.guilds.get(guildid).roles.find((r) => r.id == roleInfo.roleid).members.filter((m) => m.id != userid).forEach((member) => { member.removeRole(client.guilds.get(guildid).roles.find((r) => r.id == roleInfo.roleid), "Counting Role") })
