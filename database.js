@@ -72,7 +72,7 @@ module.exports = function(client) { return {
     getCountingChannel(guildid, channelid) {
         return new Promise(async function(resolve, reject) {
             let guild = await cacheGuild(guildid);
-            resolve(guild.countingchannels[channelid] ? guild.countingchannels[channelid].channelid : undefined)
+            resolve(guild.countingchannels[channelid] ? guild.countingchannels[channelid].channelid : '')
         })
     },
     addToCount(guildid, channelid, userid) {
