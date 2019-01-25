@@ -14,7 +14,7 @@ const guildSchema = mongoose.Schema({
   //message: String
 }, { minimize: false })
 
-const channelSchema = mongoose.Schema({
+/*const channelSchema = mongoose.Schema({
   channelid: String,
   count: Number,
   countby: Number,
@@ -24,7 +24,7 @@ const channelSchema = mongoose.Schema({
   subscriptions: {}, // deprecated
   topic: String,
   user: String
-}, { minimize: false })
+}, { minimize: false })*/
 
 const subscribeSchema = mongoose.Schema({
   channelid: String,
