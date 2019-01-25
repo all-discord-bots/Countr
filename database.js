@@ -22,7 +22,7 @@ const channelSchema = mongoose.Schema({
   message: String,
   modules: [],
   subscriptions: {}, // deprecated
-  topicdata: String,
+  topic: String,
   user: String
 }, { minimize: false })
 
@@ -114,7 +114,7 @@ module.exports = function(client) { return {
             guild.countingchannels[channelid].count = savedGuilds[guildid].countingchannels[channelid].count;
             guild.countingchannels[channelid].user = savedGuilds[guildid].countingchannels[channelid].user;
             await guild.save().then(resolve).catch(reject);
-            updateTopic(guildid, client)
+            updateTopic(guildid, channelid, client)
         })
     },
     setCountBy (guildid, channelid, by) {
@@ -127,7 +127,7 @@ module.exports = function(client) { return {
             guild.countingchannels[channelid].countby = savedGuilds[guildid].countingchannels[channelid].countby;
             guild.countingchannels[channelid].user = savedGuilds[guildid].countingchannels[channelid].user;
             await guild.save().then(resolve).catch(reject);
-            updateTopic(guildid, client)
+            updateTopic(guildid, channelid, client)
         })
     },
     toggleModule(guildid, channelid, moduleStr) {
@@ -165,7 +165,7 @@ module.exports = function(client) { return {
               });
         })
     },
-    checkSubscribed(guildid, count, countUser, messageID) {
+    checkSubscribed(guildid, channelid, count, countUser, messageID) {
         return new Promise(async function(resolve, reject) {
             let guild = await getGuild(guildid);
 
@@ -190,7 +190,7 @@ module.exports = function(client) { return {
             })
 
             await subs.forEach(async (userID) => {
-                try { await client.guilds.get(guildid).members.get(userID).send("The guild " + client.guilds.get(guildid).name + " just reached " + count + " total counts! :tada:\nThe user who sent it was <@" + countUser + ">\n[<https://discordapp.com/channels/" + guildid + "/" + guild.channel + "/" + messageID + ">]"); } catch(e) {}
+                try { await client.guilds.get(guildid).members.get(userID).send("The guild " + client.guilds.get(guildid).name + " just reached " + count + " total counts! :tada:\nThe user who sent it was <@" + countUser + ">\n[<https://discordapp.com/channels/" + guildid + "/" + guild.countingchannels[channelid].channelid + "/" + messageID + ">]"); } catch(e) {}
             });
 
             resolve(true)
@@ -254,7 +254,7 @@ module.exports = function(client) { return {
                 roles.forEach(roleInfo => {
                     if ((roleInfo.mode == 'each' && Number.isInteger(count / roleInfo.count)) || (roleInfo.mode == 'once' && count == roleInfo.count)) {
                         try {
-                            if (roleInfo.duration == 'temporary') client.guilds.get(guildid).roles.find((r) => r.id == roleInfo.roleid).members.filter((m) => m.id != userid).forEach(member => { member.removeRole(client.guilds.get(guildid).roles.find((r) => r.id == roleInfo.roleid), "Counting Role") })
+                            if (roleInfo.duration == 'temporary') client.guilds.get(guildid).roles.find((r) => r.id == roleInfo.roleid).members.filter((m) => m.id != userid).forEach((member) => { member.removeRole(client.guilds.get(guildid).roles.find((r) => r.id == roleInfo.roleid), "Counting Role") })
                             client.guilds.get(guildid).members.get(userid).addRole(client.guilds.get(guildid).roles.find((r) => r.id == roleInfo.roleid), 'Counting Role')
                         } catch(e) {}
                     }
@@ -264,7 +264,7 @@ module.exports = function(client) { return {
     }
 }}
 
-function getGuild(guildid) {
+function getGuild(guildid, channelid) {
     return new Promise(function(resolve, reject) {
         Guild.findOne({
             guildid: guildid
@@ -273,14 +273,16 @@ function getGuild(guildid) {
             if (!guild) {
                 let newGuild = new Guild({
                     guildid: guildid,
-                    channel: '',
-                    count: 0,
-                    countby: 1,
-                    user: '',
-                    modules: [],
-                    subscriptions: {},
-                    topic: '',
-                    message: ''
+                    countingchannels: {
+                      channelid: channelid,
+                      count: 0,
+                      countby: 1,
+                      message: '',
+                      modules: [],
+                      subscriptions: {},
+                      topic: '',
+                      user: ''
+                    }
                 })
 
                 return resolve(newGuild);
@@ -289,14 +291,12 @@ function getGuild(guildid) {
     })
 }
 
-function getChannel
-
-function updateTopic(guildid, client) {
+function updateTopic(guildid, channelid, client) {
     return new Promise(async function(resolve, reject) {
         let guild = await getGuild(guildid);
         try {
-            if (guild.topic == "") await client.guilds.get(guildid).channels.get(guild.channel).setTopic("**Next count:** " + (guild.count + guild.countby))
-            else if (guild.topic != "disable") await client.guilds.get(guildid).channels.get(guild.channel).setTopic(guild.topic.replace("{{COUNT}}", (guild.count + guild.countby)))
+            if (guild.countingchannels[channelid].topic == "") await client.guilds.get(guildid).channels.get(guild.countingchannels[channelid].channelid).setTopic("**Next count:** " + (guild.countingchannels[channelid].count + guild.countingchannels[channelid].countby))
+            else if (guild.countingchannels[channelid].topic != "disable") await client.guilds.get(guildid).channels.get(guild.countingchannels[channelid].channelid).setTopic(guild.countingchannels[channelid].topic.replace("{{COUNT}}", (guild.countingchannels[channelid].count + guild.countingchannels[channelid].countby)))
         } catch(e) {}
         resolve(true);
     })
