@@ -172,7 +172,7 @@ client.on('message', async (message) => {
         if (!channel) return message.channel.send(':x: Invalid channel.')
         if (channel.type != 'text') return message.channel.send(':x: Invalid channel type.')
 
-	let botMsg = await message.channel.send(`:hotsprings: Unlinking ${channel.id === message.channel.id ? 'this channel' : channel.toString())}...`)
+	let botMsg = await message.channel.send(`:hotsprings: Unlinking ${channel.id === message.channel.id ? 'this channel' : channel.toString()}...`)
         return database.saveCountingChannel(message.guild.id, channel.id, '0')
             .then(() => { botMsg.edit(':white_check_mark: Unlinked the counting channel.') })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
@@ -214,14 +214,22 @@ client.on('message', async (message) => {
             return message.channel.send(':x: Module does not exist.')
         }
     } else if (['subscribe'].includes(base)) {
-        let number = parseInt(message.content.split(' ').splice(1)[0])
+	return message.channel.send(':x: This command is currently under maintanence!');
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
+        if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
+        if (!channel) return message.channel.send(':x: Invalid channel.')
+        if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
+
+        let number = parseInt(message.content.split(' ').splice(2)[0])
         if (!number) return message.channel.send(':x: Invalid count.')
 
-        let count = await database.getCount(message.guild.id, message.channel.id);
+        let count = await database.getCount(message.guild.id, channel.id);
         if (number <= count.count) return message.channel.send(':warning: You can\'t subscribe to a count that\'s under the current count.')
 
         let botMsg = await message.channel.send(':hotsprings: Subscribing...')
-        return database.subscribe(message.guild.id, message.author.id, number)
+        return database.subscribe(message.guild.id, channel.id, message.author.id, number)
             .then(() => { botMsg.edit(`:white_check_mark: I will notify you when this server reach ${number} total counts.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['set-topic','settopic','topic'].includes(base)) {
@@ -244,6 +252,7 @@ client.on('message', async (message) => {
             return botMsg.edit(':anger: An unknown error occoured. Try again later.')
         })
     } else if (['role'].includes(base)) {
+	return message.channel.send(':x: This command is currently under maintanence!');
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         let mode = message.content.split(' ').splice(1)[0];
         let count = parseInt(message.content.split(' ').splice(2)[0]);
