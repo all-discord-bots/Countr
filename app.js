@@ -87,11 +87,11 @@ client.on('message', async (message) => {
     if (split1[0].match(spli).length !== 1 || split1[0].match(spli)[0].length !== cmd_prefix.trim().length) return;
     let base = split[0].toLowerCase(); // the command
     let args = split.slice(1); // the commands arguments
-    
+
     let content = message.content.toLowerCase();
 
     if (message.author.id == client.user.id) return;
-    
+
     if (!message.guild) return; // if its in a DM, we don't want it to trigger any other command. If it's ${prefix}help or ${prefix}info, we don't want to send the info message above, but still not trigger any other command.
 
     let countingChannel = await database.getCountingChannel(message.guild.id, message.channel.id);
@@ -142,7 +142,7 @@ client.on('message', async (message) => {
         database.setLastMessage(message.guild.id, message.channel.id, countMsg.id)
         database.checkSubscribed(message.guild.id, message.channel.id, count, message.author.id, countMsg.id)
         database.checkRole(message.guild.id, count, message.author.id)
-        
+
         return;
     }
 
@@ -193,10 +193,10 @@ client.on('message', async (message) => {
     } else if (['toggle-module','togglemodule','toggle','toggle-setting','togglesetting'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
-        if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0].join(' '))
+        if (message.content.split(' ').splice(1)[0].join(' ').length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' '))
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' ').replace('<#', '').replace('>', ''))
         if (!channel) return message.channel.send(':x: Invalid channel.')
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
@@ -215,10 +215,10 @@ client.on('message', async (message) => {
         }
     } else if (['subscribe'].includes(base)) {
 	return message.channel.send(':x: This command is currently under maintanence!');
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
-        if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0].join(' '))
+        if (message.content.split(' ').splice(1)[0].join(' ').length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' '))
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' ').replace('<#', '').replace('>', ''))
         if (!channel) return message.channel.send(':x: Invalid channel.')
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
@@ -235,10 +235,10 @@ client.on('message', async (message) => {
     } else if (['set-topic','settopic','topic'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-	let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
-        if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
+	let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0].join(' '))
+        if (message.content.split(' ').splice(1)[0].join(' ').length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' '))
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' ').replace('<#', '').replace('>', ''))
         if (!channel) return message.channel.send(':x: Invalid channel.')
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
@@ -273,10 +273,10 @@ client.on('message', async (message) => {
     } else if (['set-starting-count','setstartingcount','startingcount','starting-count','set-count','setcount','set-start-count','setstartcount','startcount','start-count'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
-        if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0].join(' '))
+        if (message.content.split(' ').splice(1)[0].join(' ').length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' '))
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' ').replace('<#', '').replace('>', ''))
         if (!channel) return message.channel.send(':x: Invalid channel.')
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
@@ -290,10 +290,10 @@ client.on('message', async (message) => {
     } else if (['set-count-by','set-counting-by','setcountby','setcountingby','count-by','counting-by','countby','countingby'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
-        if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0].join(' '))
+        if (message.content.split(' ').splice(1)[0].join(' ').length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' '))
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' ').replace('<#', '').replace('>', ''))
         if (!channel) return message.channel.send(':x: Invalid channel.')
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
