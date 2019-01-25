@@ -273,16 +273,18 @@ function getGuild(guildid, channelid) {
             if (err) return reject(err);
             if (!guild) {
                 let newGuild = new Guild({
-                    guildid: guildid,
                     countingchannels: {
-                      channelid: channelid,
-                      count: 0,
-                      countby: 1,
-                      message: '',
-                      modules: [],
-                      subscriptions: {},
-                      topic: '',
-                      user: ''
+                      [channelid]: {
+                        guildid: guildid,
+                        channelid: channelid,
+                        count: 0,
+                        countby: 1,
+                        message: '',
+                        modules: [],
+                        subscriptions: {},
+                        topic: '',
+                        user: ''
+                      }
                     }
                 })
 
