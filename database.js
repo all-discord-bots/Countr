@@ -214,7 +214,7 @@ module.exports = function(client) { return {
         })
     },
     getChannelCount() {
-        return new Promise(async function(resolve, reject) {
+        /*return new Promise(async function(resolve, reject) {
             
             Guild.find({}, (err, guilds) => {
                 if (err) return reject(err);
@@ -223,7 +223,8 @@ module.exports = function(client) { return {
 
                 return resolve(count);
             })
-        })
+        })*/
+        return client.guilds.size;
     },
     setRole(guildid, mode, count, duration, roleid) {
         return new Promise(async function(resolve, reject) {
