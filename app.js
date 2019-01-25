@@ -95,7 +95,7 @@ client.on('message', async (message) => {
     if (!message.guild) return; // if its in a DM, we don't want it to trigger any other command. If it's ${prefix}help or ${prefix}info, we don't want to send the info message above, but still not trigger any other command.
 
     let countingChannel = await database.getCountingChannel(message.guild.id, message.channel.id);
-    if (message.channel.id == countingChannel) {
+    if (message.channel.id === countingChannel) {
         if (disabledGuilds.includes(message.guild.id)) return message.delete()
         if (message.author.bot && message.webhookID == null) return message.delete()
         if (message.webhookID != null) return;
@@ -156,36 +156,59 @@ client.on('message', async (message) => {
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
         if (!channel) return message.channel.send(':x: Invalid channel.')
-        if (channel.type != 'text') return message.channel.send(':x: Invalid channel type.')
+        if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
         let botMsg = await message.channel.send(':hotsprings: Linking...')
         return database.saveCountingChannel(message.guild.id, channel.id)
-            .then(() => { botMsg.edit(`:white_check_mark: From now on, ${(channel.id == message.channel.id ? 'this channel' : channel.toString())} will be used for counting.`) })
+            .then(() => { botMsg.edit(`:white_check_mark: From now on, ${channel.id === message.channel.id ? 'this channel' : channel.toString()} will be used for counting.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['unlink','unlink-channel','unlinkchannel'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
-        let botMsg = await message.channel.send(':hotsprings: Unlinking...')
-        return database.saveCountingChannel(message.guild.id, '0')
+
+	let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
+        if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
+        if (!channel) return message.channel.send(':x: Invalid channel.')
+        if (channel.type != 'text') return message.channel.send(':x: Invalid channel type.')
+
+	let botMsg = await message.channel.send(`:hotsprings: Unlinking ${channel.id === message.channel.id ? 'this channel' : channel.toString())}...`)
+        return database.saveCountingChannel(message.guild.id, channel.id, '0')
             .then(() => { botMsg.edit(':white_check_mark: Unlinked the counting channel.') })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['reset','reset-count','resetcount'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
-        
+
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
+        if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
+        if (!channel) return message.channel.send(':x: Invalid channel.')
+        if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
+
         let botMsg = await message.channel.send(':hotsprings: Resetting...')
-        return database.setCount(message.guild.id, message.channel.id, 0)
-            .then(() => { botMsg.edit(':white_check_mark: Counting has been reset.') })
+        return database.setCount(message.guild.id, channel.id, 0)
+            .then(() => { botMsg.edit(`:white_check_mark: ${channel.id === message.channel.id ? 'this channel' : channel.toString()} count has been reset.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['toggle-module','togglemodule','toggle','toggle-setting','togglesetting'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
-        let arg = message.content.split(' ').splice(1)[0] // gets the first arg and makes it lower case
-        if (!arg) return message.channel.send(`:clipboard: Modules: \`${allModules.join('\`, \`')}\` - To read more about them, go to the documentation page, \`${prefix}info\` for link`)
-        arg = arg.toLowerCase()
-        let modules = await database.getModules(message.guild.id, message.channel.id);
-        if (allModules.includes(arg)) {
-            let state = modules.includes(arg)
-            let botMsg = await message.channel.send(`:hotsprings: ${(modules.includes(arg) ? 'Disabling' : 'Enabling')}...`)
-            return database.toggleModule(message.guild.id, message.channel.id, arg)
-              .then(() => { botMsg.edit(`:white_check_mark: Module \`${arg}\` is now ${(state ? 'disabled' : 'enabled')}.`); })
+
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
+        if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
+        if (!channel) return message.channel.send(':x: Invalid channel.')
+        if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
+
+        let module = message.content.split(' ').splice(2)[0] // gets the second arg and makes it lower case
+        if (!module) return message.channel.send(`:clipboard: Modules: \`${allModules.join('\`, \`')}\` - \`${prefix}help\` To read more about them`)
+        module = module.toLowerCase()
+        let modules = await database.getModules(message.guild.id, channel.id);
+        if (allModules.includes(module)) {
+            let state = modules.includes(module)
+            let botMsg = await message.channel.send(`:hotsprings: ${(modules.includes(module) ? 'Disabling' : 'Enabling')}...`)
+            return database.toggleModule(message.guild.id, channel.id, module)
+              .then(() => { botMsg.edit(`:white_check_mark: Module \`${module}\` is now ${(state ? 'disabled' : 'enabled')} for ${channel.id === message.channel.id ? 'this channel' : channel.toString()}.`); })
               .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
         } else {
             return message.channel.send(':x: Module does not exist.')
@@ -203,10 +226,18 @@ client.on('message', async (message) => {
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['set-topic','settopic','topic'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
-        let topic = message.content.split(' ').splice(1).join(' ');
+
+	let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
+        if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
+        if (!channel) return message.channel.send(':x: Invalid channel.')
+        if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
+
+        let topic = message.content.split(' ').splice(2).join(' ');
 
         let botMsg = await message.channel.send(':hotsprings: Saving...')
-        return database.setTopic(message.guild.id, message.channel.id, topic).then(() => {
+        return database.setTopic(message.guild.id, channel.id, topic).then(() => {
             if (topic.length == 0) return botMsg.edit(':white_check_mark: The topic has been cleared.')
             return botMsg.edit(':white_check_mark: The topic has been updated.')
         }).catch(() => {
@@ -232,21 +263,37 @@ client.on('message', async (message) => {
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['set-starting-count','setstartingcount','startingcount','starting-count','set-count','setcount','set-start-count','setstartcount','startcount','start-count'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
-        let count = parseInt(message.content.split(' ').splice(1)[0]) || -1;
-        if (isNaN(count)) return message.channel.send(`:x: Invalid count. Use \`${prefix}set <count>\``);
+
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
+        if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
+        if (!channel) return message.channel.send(':x: Invalid channel.')
+        if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
+
+        let count = parseInt(message.content.split(' ').splice(2)[0]) || -1;
+        if (isNaN(count)) return message.channel.send(`:x: Invalid count. Use \`${prefix}set-starting-count <channel> <count>\``);
 
         let botMsg = await message.channel.send(':hotsprings: Saving...')
-        return database.setCount(message.guild.id, message.channel.id, count)
-            .then(() => { botMsg.edit(`:white_check_mark: The count is set to ${count}.`) })
+        return database.setCount(message.guild.id, channel.id, count)
+            .then(() => { botMsg.edit(`:white_check_mark: The count for ${channel.id === message.channel.id ? 'this channel' : channel.toString()} has been set to ${count}.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['set-count-by','set-counting-by','setcountby','setcountingby','count-by','counting-by','countby','countingby'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
-        let by = parseInt(message.content.split(' ').splice(1)[0]) || -1;
-        if (by === 0 || isNaN(by)) return message.channel.send(`:x: Invalid amount. Use \`${prefix}set-count-by <by>\``);
+
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
+        if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
+        if (!channel) return message.channel.send(':x: Invalid channel.')
+        if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
+
+        let by = parseInt(message.content.split(' ').splice(2)[0]) || -1;
+        if (by === 0 || isNaN(by)) return message.channel.send(`:x: Invalid amount. Use \`${prefix}set-count-by <channel> <by>\``);
 
         let botMsg = await message.channel.send(':hotsprings: Saving...')
-        return database.setCountBy(message.guild.id, message.channel.id, by)
-            .then(() => { botMsg.edit(`:white_check_mark: You will now count by ${by}.`) })
+        return database.setCountBy(message.guild.id, channel.id, by)
+            .then(() => { botMsg.edit(`:white_check_mark: You will now count by ${by} in ${channel.id === message.channel.id ? 'this channel' : channel.toString()}.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (RegExp(`^(<@!?${client.user.id}>)`).test(content) || base === 'prefix') {
             return message.channel.send(`:wave: My prefix is \`${prefix}\`, for help type \`${prefix}help\`.`)
@@ -258,7 +305,7 @@ client.on('message', async (message) => {
             embed: {
                 title: 'Commands',
                 //description: `\`${prefix}help\` - displays this help embed\n\`${prefix}ping\` - gives you the bots ping\n\`${prefix}link [channel]\` - setup a counting channel\n\t**Arguments**\n\t\`[channel]\` - can either be the name, a mention or ID of a channel. Leave empty to use the current channel.\n\t**Examples**\n\t\`${prefix}link #counting-channel\`\n\`${prefix}unlink\` - unlink the current counting channel\n\`${prefix}reset\` - reset the count back to 0\n\`${prefix}toggle [module]\` - toggle different modules\n\t**Arguments**\n\t\`[module]\` - can be a name of a module you want to toggle. Leave empty to get a list of modules.\n\t**Examples**\n\t\`${prefix}toggle webhook\`\n\t**Modules**\n\t\`allow-spam\` - allows members to count more than once in a row, without someone else typing between.\n\t\`talking\` - allows members to talk after the count, ex. '1337 hello Admin!'\n\t\`reposting\` - makes the bot repost the message, preventing the user to edit or delete the count afterwards.\n\t\`webhook\` - makes the reposted message be a webhook. (Requires the 'reposting'-module)\n\t\`recover\` - makes the bot delete all new messages while it's been offline. In a nutshell, resumes the counting. This feature is BETA, so use it at your own risk.\n\`${prefix}subscribe <count>\` - subscribe to a count in the guild\n\t**Arguments**\n\t\`<count>\` - is the count you want to get notified of.\n\t**Examples**\n\t\`${prefix}subscribe 10000\`\n\`${prefix}topic [topic]\` - set the topic\n\t**Arguments**\n\t\`[topic]\` - can be what you want to be displayed in the topic. Leave empty to reset it. Set to 'disable' to disable. Use \`{{COUNT}}\` as a placeholder to display the current count.\n\t**Examples**\n\t\`${prefix}topic Test topic!\`\n\t\`${prefix}topic next count is {{COUNT}}\`\n\`${prefix}set <count>\` - set the count to a specific count\n\t**Arguments**\n\t\`<count>\` - is whatever you want to set the count to.\n\`${prefix}role <mode> <count> <duration> <role...>\` - setup a role prize so people can get roles when they count\n\t**Arguments**\n\t\`<mode>\` - setting to "each" <count>, ex. 1000 will accept 1k,2k,3k. Setting to "only" will set it to only be.\n\t\`<count>\` - count that the bot will check on.\n\t\`<duration>\` - setting to "permanent" will make the role permanent. Setting it to "temporary" will allow 1 person to have the role, when someone gets the role, the other person gets kicked out of the role.\n\t\`<role...>\` - either the name, mention, or ID of a role.\n\t**Examples**\n\t\`c!role each 50 temporary Counting Master\``
-                description: `\`${prefix}help\` - displays this help embed\n\`${prefix}ping\` - gives you the bots ping\n\`${prefix}link [channel]\` - setup a counting channel\n\t**Arguments**\n\t\`[channel]\` - can either be the name, a mention or ID of a channel. Leave empty to use the current channel.\n\t**Examples**\n\t\`${prefix}link #counting-channel\`\n\`${prefix}unlink\` - unlink the current counting channel\n\`${prefix}reset\` - reset the count back to 0\n\`${prefix}toggle [module]\` - toggle different modules\n\t**Arguments**\n\t\`[module]\` - can be a name of a module you want to toggle. Leave empty to get a list of modules.\n\t**Examples**\n\t\`${prefix}toggle webhook\`\n\t**Modules**\n\t\`allow-spam\` - allows members to count more than once in a row, without someone else typing between.\n\t\`talking\` - allows members to talk after the count, ex. '1337 hello Admin!'\n\t\`reposting\` - makes the bot repost the message, preventing the user to edit or delete the count afterwards.\n\t\`webhook\` - makes the reposted message be a webhook. (Requires the 'reposting'-module)\n\t\`recover\` - makes the bot delete all new messages while it's been offline. In a nutshell, resumes the counting. This feature is BETA, so use it at your own risk.`,
+                description: `\`${prefix}help\` - displays this help embed\n\`${prefix}ping\` - gives you the bots ping\n\`${prefix}link [channel]\` - setup a counting channel\n\t**Arguments**\n\t\`[channel]\` - can either be the name, a mention or ID of a channel. Leave empty to use the current channel.\n\t**Examples**\n\t\`${prefix}link #counting-channel\`\n\`${prefix}unlink <channel>\` - unlink a counting channel\n\`${prefix}reset <channel>\` - reset the count back to 0\n\`${prefix}toggle <channel> [module]\` - toggle different modules\n\t**Arguments**\n\t\`[channel]\` - can either be the name, a mention or ID of a channel. Leave empty to use the current channel.\n\t\`[module]\` - can be a name of a module you want to toggle. Leave empty to get a list of modules.\n\t**Examples**\n\t\`${prefix}toggle #counting webhook\`\n\t**Modules**\n\t\`allow-spam\` - allows members to count more than once in a row, without someone else typing between.\n\t\`talking\` - allows members to talk after the count, ex. '1337 hello Admin!'\n\t\`reposting\` - makes the bot repost the message, preventing the user to edit or delete the count afterwards.\n\t\`webhook\` - makes the reposted message be a webhook. (Requires the 'reposting'-module)\n\t\`recover\` - makes the bot delete all new messages while it's been offline. In a nutshell, resumes the counting. This feature is BETA, so use it at your own risk.`,
                 footer: {
                     text: 'Page 1/2'
                 }
@@ -268,7 +315,7 @@ client.on('message', async (message) => {
             embed: {
                 title: 'Commands',
                 //description: `\`${prefix}help\` - displays this help embed\n\`${prefix}ping\` - gives you the bots ping\n\`${prefix}link [channel]\` - setup a counting channel\n\t**Arguments**\n\t\`[channel]\` - can either be the name, a mention or ID of a channel. Leave empty to use the current channel.\n\t**Examples**\n\t\`${prefix}link #counting-channel\`\n\`${prefix}unlink\` - unlink the current counting channel\n\`${prefix}reset\` - reset the count back to 0\n\`${prefix}toggle [module]\` - toggle different modules\n\t**Arguments**\n\t\`[module]\` - can be a name of a module you want to toggle. Leave empty to get a list of modules.\n\t**Examples**\n\t\`${prefix}toggle webhook\`\n\t**Modules**\n\t\`allow-spam\` - allows members to count more than once in a row, without someone else typing between.\n\t\`talking\` - allows members to talk after the count, ex. '1337 hello Admin!'\n\t\`reposting\` - makes the bot repost the message, preventing the user to edit or delete the count afterwards.\n\t\`webhook\` - makes the reposted message be a webhook. (Requires the 'reposting'-module)\n\t\`recover\` - makes the bot delete all new messages while it's been offline. In a nutshell, resumes the counting. This feature is BETA, so use it at your own risk.\n\`${prefix}subscribe <count>\` - subscribe to a count in the guild\n\t**Arguments**\n\t\`<count>\` - is the count you want to get notified of.\n\t**Examples**\n\t\`${prefix}subscribe 10000\`\n\`${prefix}topic [topic]\` - set the topic\n\t**Arguments**\n\t\`[topic]\` - can be what you want to be displayed in the topic. Leave empty to reset it. Set to 'disable' to disable. Use \`{{COUNT}}\` as a placeholder to display the current count.\n\t**Examples**\n\t\`${prefix}topic Test topic!\`\n\t\`${prefix}topic next count is {{COUNT}}\`\n\`${prefix}set <count>\` - set the count to a specific count\n\t**Arguments**\n\t\`<count>\` - is whatever you want to set the count to.\n\`${prefix}role <mode> <count> <duration> <role...>\` - setup a role prize so people can get roles when they count\n\t**Arguments**\n\t\`<mode>\` - setting to "each" <count>, ex. 1000 will accept 1k,2k,3k. Setting to "only" will set it to only be.\n\t\`<count>\` - count that the bot will check on.\n\t\`<duration>\` - setting to "permanent" will make the role permanent. Setting it to "temporary" will allow 1 person to have the role, when someone gets the role, the other person gets kicked out of the role.\n\t\`<role...>\` - either the name, mention, or ID of a role.\n\t**Examples**\n\t\`c!role each 50 temporary Counting Master\``
-                description: `\`${prefix}subscribe <count>\` - subscribe to a count in the guild\n\t**Arguments**\n\t\`<count>\` - is the count you want to get notified of.\n\t**Examples**\n\t\`${prefix}subscribe 10000\`\n\`${prefix}topic [topic]\` - set the topic\n\t**Arguments**\n\t\`[topic]\` - can be what you want to be displayed in the topic. Leave empty to reset it. Set to 'disable' to disable. Use \`{{COUNT}}\` as a placeholder to display the current count.\n\t**Examples**\n\t\`${prefix}topic Test topic!\`\n\t\`${prefix}topic next count is {{COUNT}}\`\n\`${prefix}set-starting-count <count>\` - set the count to a specific count\n\t**Arguments**\n\t\`<count>\` - is whatever you want to set the count to.\n\`${prefix}role <mode> <count> <duration> <role...>\` - setup a role prize so people can get roles when they count\n\t**Arguments**\n\t\`<mode>\` - setting to "each" <count>, ex. 1000 will accept 1k,2k,3k. Setting to "only" will set it to only be.\n\t\`<count>\` - count that the bot will check on.\n\t\`<duration>\` - setting to "permanent" will make the role permanent. Setting it to "temporary" will allow 1 person to have the role, when someone gets the role, the other person gets kicked out of the role.\n\t\`<role...>\` - either the name, mention, or ID of a role.\n\t**Examples**\n\t\`c!role each 50 temporary Counting Master\`\n\`${prefix}set-count-by <by>\` - set the amount to count by\n\t**Arguments**\n\t\`<by>\` - the amount you want the number to increase.`,
+                description: `\`${prefix}subscribe <count>\` - subscribe to a count in the guild\n\t**Arguments**\n\t\`<count>\` - is the count you want to get notified of.\n\t**Examples**\n\t\`${prefix}subscribe 10000\`\n\`${prefix}topic <channel> [topic]\` - set the topic for a counting channel\n\t**Arguments**\n\t\`[channel]\` - can either be the name, a mention or ID of a channel. Leave empty to use the current channel.\n\t\`[topic]\` - can be what you want to be displayed in the topic. Leave empty to reset it. Set to 'disable' to disable. Use \`{{COUNT}}\` as a placeholder to display the current count.\n\t**Examples**\n\t\`${prefix}topic #counting Test topic!\`\n\t\`${prefix}topic #counting next count is {{COUNT}}\`\n\`${prefix}set-starting-count <channel> <count>\` - set the count to a specific count\n\t**Arguments**\n\t\`[channel]\` - can either be the name, a mention or ID of a channel. Leave empty to use the current channel.\n\t\`<count>\` - is whatever you want to set the count to.\n\`${prefix}role <mode> <count> <duration> <role...>\` - setup a role prize so people can get roles when they count\n\t**Arguments**\n\t\`<mode>\` - setting to "each" <count>, ex. 1000 will accept 1k,2k,3k. Setting to "only" will set it to only be.\n\t\`<count>\` - count that the bot will check on.\n\t\`<duration>\` - setting to "permanent" will make the role permanent. Setting it to "temporary" will allow 1 person to have the role, when someone gets the role, the other person gets kicked out of the role.\n\t\`<role...>\` - either the name, mention, or ID of a role.\n\t**Examples**\n\t\`c!role each 50 temporary Counting Master\`\n\`${prefix}set-count-by <channel> <by>\` - set the amount to count by in a counting channel\n\t**Arguments**\n\t\`[channel]\` - can either be the name, a mention or ID of a channel. Leave empty to use the current channel.\n\t\`<by>\` - the amount you want the number to increase by.`,
                 footer: {
                     text: 'Page 2/2'
                 }
