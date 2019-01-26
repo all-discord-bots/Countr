@@ -340,7 +340,8 @@ client.on('message', async (message) => {
 
 client.on('messageUpdate', (oldMessage, newMessage) => {
 	if (oldMessage.author.bot) return;
-	client.emit('deleteMessage', newMessage, 'user');
+	let countingChannel = await database.getCountingChannel(oldMessage.channel.id);
+	if (oldMessage.channel.id === countingChannel) client.emit('deleteMessage', newMessage, 'user');
 })
 
 client.on('messageDelete', async (message) => {
