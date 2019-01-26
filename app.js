@@ -193,10 +193,10 @@ client.on('message', async (message) => {
     } else if (['toggle-module','togglemodule','toggle','toggle-setting','togglesetting'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0].join(' '))
-        if (message.content.split(' ').splice(1)[0].join(' ').length < 1) channel = message.channel
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' '))
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' ').replace('<#', '').replace('>', ''))
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0])
+        if (message.content.split(' ').splice(1)[0].length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0])
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].replace('<#', '').replace('>', ''))
         if (!channel) return message.channel.send(':x: Invalid channel.')
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
@@ -215,10 +215,10 @@ client.on('message', async (message) => {
         }
     } else if (['subscribe'].includes(base)) {
 	return message.channel.send(':x: This command is currently under maintanence!');
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0].join(' '))
-        if (message.content.split(' ').splice(1)[0].join(' ').length < 1) channel = message.channel
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' '))
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' ').replace('<#', '').replace('>', ''))
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0])
+        if (message.content.split(' ').splice(1)[0].length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0])
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].replace('<#', '').replace('>', ''))
         if (!channel) return message.channel.send(':x: Invalid channel.')
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
@@ -235,10 +235,10 @@ client.on('message', async (message) => {
     } else if (['set-topic','settopic','topic'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-	let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0].join(' '))
-        if (message.content.split(' ').splice(1)[0].join(' ').length < 1) channel = message.channel
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' '))
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' ').replace('<#', '').replace('>', ''))
+	let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0])
+        if (message.content.split(' ').splice(1)[0].length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0])
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].replace('<#', '').replace('>', ''))
         if (!channel) return message.channel.send(':x: Invalid channel.')
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
@@ -273,10 +273,10 @@ client.on('message', async (message) => {
     } else if (['set-starting-count','setstartingcount','startingcount','starting-count','set-count','setcount','set-start-count','setstartcount','startcount','start-count'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0].join(' '))
-        if (message.content.split(' ').splice(1)[0].join(' ').length < 1) channel = message.channel
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' '))
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' ').replace('<#', '').replace('>', ''))
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0])
+        if (message.content.split(' ').splice(1)[0].length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0])
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].replace('<#', '').replace('>', ''))
         if (!channel) return message.channel.send(':x: Invalid channel.')
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
@@ -290,10 +290,10 @@ client.on('message', async (message) => {
     } else if (['set-count-by','set-counting-by','setcountby','setcountingby','count-by','counting-by','countby','countingby'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0].join(' '))
-        if (message.content.split(' ').splice(1)[0].join(' ').length < 1) channel = message.channel
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' '))
-        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].join(' ').replace('<#', '').replace('>', ''))
+        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0])
+        if (message.content.split(' ').splice(1)[0].length < 1) channel = message.channel
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0])
+        if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].replace('<#', '').replace('>', ''))
         if (!channel) return message.channel.send(':x: Invalid channel.')
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
