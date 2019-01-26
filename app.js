@@ -68,25 +68,6 @@ async function processGuild(channel) {
 }
 
 client.on('message', async (message) => {
-    let cmd_prefix;
-    if (!message.content.startsWith(client.user.toString())) {
-        cmd_prefix = prefix;
-    } else {
-        cmd_prefix = client.user.toString();
-    }
-    if (!message.content.startsWith(cmd_prefix.trim())) return;
-    let split = message.content.substr(cmd_prefix.trim().length).trim().split(' ');
-    let split1 = message.content.substr(cmd_prefix.trim()).trim().split(' ');
-    let spli;
-    if (cmd_prefix !== client.user.toString()) {
-	    spli = new RegExp(`\\${cmd_prefix.trim().split('').join('\\')}`, 'gi');
-    } else {
-	    spli = new RegExp(cmd_prefix.trim(),'gi');
-    }
-    if (!split1[0].match(spli)) spli = new RegExp(cmd_prefix.trim(), 'gi');
-    if (split1[0].match(spli).length !== 1 || split1[0].match(spli)[0].length !== cmd_prefix.trim().length) return;
-    let base = split[0].toLowerCase(); // the command
-    let args = split.slice(1); // the commands arguments
 
     let content = message.content.toLowerCase();
 
@@ -147,6 +128,26 @@ client.on('message', async (message) => {
     }
 
     if (message.author.bot) return;
+	
+    let cmd_prefix;
+    if (!message.content.startsWith(client.user.toString())) {
+        cmd_prefix = prefix;
+    } else {
+        cmd_prefix = client.user.toString();
+    }
+    if (!message.content.startsWith(cmd_prefix.trim())) return;
+    let split = message.content.substr(cmd_prefix.trim().length).trim().split(' ');
+    let split1 = message.content.substr(cmd_prefix.trim()).trim().split(' ');
+    let spli;
+    if (cmd_prefix !== client.user.toString()) {
+        spli = new RegExp(`\\${cmd_prefix.trim().split('').join('\\')}`, 'gi');
+    } else {
+        spli = new RegExp(cmd_prefix.trim(),'gi');
+    }
+    if (!split1[0].match(spli)) spli = new RegExp(cmd_prefix.trim(), 'gi');
+    if (split1[0].match(spli).length !== 1 || split1[0].match(spli)[0].length !== cmd_prefix.trim().length) return;
+    let base = split[0].toLowerCase(); // the command
+    let args = split.slice(1); // the commands arguments
 
     if (['link','linkchannel','link-channel'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
