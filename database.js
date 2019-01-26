@@ -95,6 +95,19 @@ module.exports = function(client) { return {
             updateTopic(channelid, client)
         })
     },
+    subtractFromCount(channelid, userid) {
+        return new Promise(async function(resolve, reject) {
+            await cacheChannel(channelid);
+            savedChannels[channelid].count -= savedChannels[channelid].countby;
+            savedChannels[channelid].user = userid;
+          
+            let channel = await getChannel(channelid);
+            channel.count = savedChannels[channelid].count;
+            channel.user = savedChannels[channelid].user;
+            await channel.save().then(resolve).catch(reject);
+            updateTopic(channelid, client)
+        })
+    },
     setLastMessage(channelid, message) {
         return new Promise(async function(resolve, reject) {
             await cacheChannel(channelid);
