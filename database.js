@@ -85,7 +85,7 @@ module.exports = function(client) { return {
             let channel = await getChannel(channelid);
             channel.count = savedChannels[channelid].count;
             channel.user = savedChannels[channelid].user;
-            await channelid.save().then(resolve).catch(reject);
+            await channel.save().then(resolve).catch(reject);
             updateTopic(channelid, client)
         })
     },
