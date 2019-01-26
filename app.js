@@ -1,4 +1,4 @@
-const { Client } = require('discord.js');
+const { Client, Collection } = require('discord.js');
 const fs = require('fs');
 
 const settings = JSON.parse(fs.readFileSync('./settings.json'))
@@ -10,6 +10,8 @@ const database = require('./database.js')(client)
 const allModules = ['allow-spam','talking','reposting','webhook', 'recover']
 
 let disabledChannels = []
+
+client.deletedMessages = new Collection();
 
 const prefix = process.env.PREFIX;
 
@@ -77,8 +79,8 @@ client.on('message', async (message) => {
 
     let countingChannel = await database.getCountingChannel(message.channel.id);
     if (message.channel.id === countingChannel) {
-        if (disabledChannels.includes(message.channel.id)) return message.delete()
-        if (message.author.bot && message.webhookID == null) return message.delete()
+        if (disabledChannels.includes(message.channel.id)) return client.emit('deleteMessage', message, 'bot');//message.delete()
+        if (message.author.bot && message.webhookID == null) return client.emit('deleteMessage', message, 'bot');//message.delete()
         if (message.webhookID != null) return;
         let _count = await database.getCount(message.channel.id);
         let count = _count.count;
@@ -87,9 +89,9 @@ client.on('message', async (message) => {
         if (message.content.startsWith('!') && isAdmin(message.member)) return; // if it starts with ! and the user has MANAGE_GUILD then don't process it.
         if (message.type !== 'DEFAULT') return; // ex. pin messages gets ignored
         let modules = await database.getModules(message.channel.id);
-        if (!modules.includes('allow-spam') && message.author.id === user) return message.delete() // we want someone else to count before the same person counts
-        if (message.content.split(' ')[0] != (count + countby).toString()) return message.delete() // message.content.split(' ').splice(1)[0] = first word/number
-        if (!modules.includes('talking') && message.content !== (count + countby).toString()) return message.delete() // if the module 'talking' isn't activated and there's some text after it, we delete it as well
+        if (!modules.includes('allow-spam') && message.author.id === user) return client.emit('deleteMessage', message, 'bot');//message.delete() // we want someone else to count before the same person counts
+        if (message.content.split(' ')[0] != (count + countby).toString()) return client.emit('deleteMessage', message, 'bot');//message.delete() // message.content.split(' ').splice(1)[0] = first word/number
+        if (!modules.includes('talking') && message.content !== (count + countby).toString()) return client.emit('deleteMessage', message, 'bot');//message.delete() // if the module 'talking' isn't activated and there's some text after it, we delete it as well
         database.addToCount(message.channel.id, message.author.id); count += countby;
         let countMsg = message;
         if (modules.includes('reposting')) {
@@ -100,7 +102,8 @@ client.on('message', async (message) => {
                         color: message.member.displayColor ? message.member.displayColor : 3553598
                     }
                 })
-                message.delete()
+		client.emit('deleteMessage', message, 'bot');
+                //message.delete()
             } else await message.channel.fetchWebhooks().then(async (webhooks) => {
                 let foundHook = webhooks.find((webhook) => webhook.name == `${client.user.username} Reposting`)
                 
@@ -115,7 +118,8 @@ client.on('message', async (message) => {
                     avatarURL: message.author.displayAvatarURL().split('?')[0]
                 })
                 
-                message.delete()
+                //message.delete()
+		client.emit('deleteMessage', message, 'bot');
 
             }).catch();
         }
@@ -334,8 +338,43 @@ client.on('message', async (message) => {
     }
 })
 
+client.on('messageUpdate', (oldMessage, newMessage) => {
+	client.emit('deleteMessage', newMessage, 'user');
+})
+
+client.on('messageDelete', async (message) => {
+	if (!message.deletedBy) {
+		message.deletedBy = 'user';
+		client.deletedMessages.set(message.id, message);
+	}
+	let modules = await database.getModules(message.channel.id);
+	if (!modules.includes('reposting')) client.emit('recalculateNumber', message);
+})
+
+client.on('deleteMessage', (message, deletedBy = 'user') => {
+	//client.emit('setDeletedBy', message, deletedBy);
+	message.deletedBy = deletedBy;
+	client.deletedMessages.set(message.id, message);
+	message.delete();
+})
+
+client.on('recalculateNumber', async (message) => {
+	if (client.deletedMessages.get(message.id).deletedBy !== 'bot') {
+		let countingChannel = await database.getCountingChannel(message.channel.id);
+		if (message.channel.id === countingChannel) {
+			if (message.channel.lastMessageID === message.id) {
+				let _count = await database.getCount(message.channel.id);
+				let count = _count.count;
+				let countby = _count.countby;
+				let user = _count.user;
+				database.subtractFromCount(message.channel.id, message.author.id); count -= countby;
+			}
+		}
+	}
+})
+
 function isAdmin(member) {
-    return member.hasPermission('MANAGE_GUILD') || ['269247101697916939'].includes(member.user.id);
+	return member.hasPermission('MANAGE_GUILD') || ['269247101697916939'].includes(member.user.id);
 }
 
 client.login(process.env.TOKEN)//config.token
