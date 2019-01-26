@@ -4,7 +4,7 @@ mongoose.connect(process.env.database_uri/*JSON.parse(require("fs").readFileSync
 const guildSchema = mongoose.Schema({
   guildid: String,
   countingchannels: {
-    channelid: String,
+    /*channelid: String,
     guildid: String,
     count: Number,
     countby: Number,
@@ -12,7 +12,7 @@ const guildSchema = mongoose.Schema({
     modules: [],
     subscriptions: {},
     channeltopic: String,
-    message: String
+    message: String*/
   }
   //channel: String,
   //count: Number,
@@ -330,13 +330,13 @@ async function cacheGuild(guildid, channelid) {
         savedGuilds[guildid].countingchannels = {};
         savedGuilds[guildid].countingchannels[channelid] = {};
         //}
-        savedGuilds[guildid].countingchannels[channelid].count = guild.countingchannels[channelid].count;
-        savedGuilds[guildid].countingchannels[channelid].countby = guild.countingchannels[channelid].countby;
-        savedGuilds[guildid].countingchannels[channelid].guildid = guild.countingchannels[channelid].guildid;
-        savedGuilds[guildid].countingchannels[channelid].user = guild.countingchannels[channelid].user;
-        savedGuilds[guildid].countingchannels[channelid].modules = guild.countingchannels[channelid].modules;
-        savedGuilds[guildid].countingchannels[channelid].channeltopic = guild.countingchannels[channelid].channeltopic;
-        savedGuilds[guildid].countingchannels[channelid].message = guild.countingchannels[channelid].message;
+        savedGuilds[guildid].countingchannels[channelid].count = guild.countingchannels[channelid].count || 0;
+        savedGuilds[guildid].countingchannels[channelid].countby = guild.countingchannels[channelid].countby || 1;
+        savedGuilds[guildid].countingchannels[channelid].guildid = guild.countingchannels[channelid].guildid || '';
+        savedGuilds[guildid].countingchannels[channelid].user = guild.countingchannels[channelid].user || '';
+        savedGuilds[guildid].countingchannels[channelid].modules = guild.countingchannels[channelid].modules || [];
+        savedGuilds[guildid].countingchannels[channelid].channeltopic = guild.countingchannels[channelid].channeltopic || '';
+        savedGuilds[guildid].countingchannels[channelid].message = guild.countingchannels[channelid].message || '';
 
         /*savedGuilds[guildid] = {};
         savedGuilds[guildid].channel = guild.channel;
