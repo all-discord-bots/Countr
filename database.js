@@ -263,8 +263,8 @@ module.exports = function(client) { return {
                 })
             })
         })
-    }
-}*/}
+    }*/
+}}
 
 function getChannel(channelid) {
     return new Promise(function(resolve, reject) {
