@@ -370,6 +370,11 @@ client.on('recalculateNumber', async (message) => {
 				let countby = _count.countby;
 				let user = _count.user;
 				database.subtractFromCount(message.channel.id, message.author.id); count -= countby;
+				return;
+			} else {
+				let count = await message.channel.messages.fetch({ limit: 1, before: message.channel.lastMessageID });
+				database.setCount(message.channel.id, count.first() ? parseInt(count.first().content) : 0);
+				return;
 			}
 		}
 	}
