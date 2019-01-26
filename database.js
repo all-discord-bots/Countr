@@ -144,7 +144,7 @@ module.exports = function(client) { return {
             else savedChannels[channelid].modules.push(moduleStr)
 
             let channel = await getChannel(channelid);
-            channel[channelid].modules = savedChannels[channelid].modules
+            channel.modules = savedChannels[channelid].modules
             channel.save().then(resolve).catch(reject);
         })
     },
