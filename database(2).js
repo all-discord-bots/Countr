@@ -28,7 +28,7 @@ const channelSchema = mongoose.Schema({
   channelid: String,
   count: Number,
   countby: Number,
-  guildid: String,
+  //guildid: String,
   message: String,
   modules: [],
   subscriptions: {}, // deprecated
@@ -148,7 +148,7 @@ module.exports = function(client) { return {
             resolve(channel.modules);
         })
     },
-    subscribe(guildid, userid, count) {
+    /*subscribe(guildid, userid, count) {
         return new Promise(async function(resolve, reject) {
             Subscribe.findOne({
                 guildid: guildid,
@@ -196,22 +196,22 @@ module.exports = function(client) { return {
 
             resolve(true)
         })
-    },
-    setTopic(guildid, channelid, topic) {
+    },*/
+    setTopic(channelid, topic) {
         return new Promise(async function(resolve, reject) {
-            await cacheGuild(guildid, channelid);
-            if (['disable', ''].includes(savedGuilds[guildid].countingchannels[channelid].channeltopic)) savedGuilds[guildid].countingchannels[channelid].channeltopic = topic; else savedGuilds[guildid].countingchannels[channelid].channeltopic = topic + (topic.includes("{{COUNT}}") ? "" : (topic == "" ? "" : " | ") + "**Next count:** {{COUNT}}")
+            await cacheChannel(channelid);
+            if (['disable', ''].includes(savedChannels[channelid].channeltopic)) savedChannels[channelid].channeltopic = topic; else savedChannels[channelid].channeltopic = topic + (topic.includes("{{COUNT}}") ? "" : (topic == "" ? "" : " | ") + "**Next count:** {{COUNT}}")
           
-            let guild = await getGuild(guildid, channelid);
-            guild.countingchannels[channelid].channeltopic = savedGuilds[guildid].countingchannels[channelid].channeltopic;
-            await guild.save().then(resolve).catch(reject);
-            updateTopic(guildid, channelid, client)
+            let channel = await getChannel(channelid);
+            channel.channeltopic = savedChannels[channelid].channeltopic;
+            await channel.save().then(resolve).catch(reject);
+            updateTopic(channelid, client)
         })
     },
-    getTopic(guildid, channelid) {
+    getTopic(channelid) {
         return new Promise(async function(resolve, reject) {
-            let guild = await cacheGuild(guildid, channelid);
-            resolve(guild.countingchannels[channelid].channeltopic)
+            let channel = await cacheChannel(channelid);
+            resolve(channel.channeltopic)
         })
     },
     getChannelCount() {
@@ -227,7 +227,7 @@ module.exports = function(client) { return {
         })*/
         return client.guilds.size;
     },
-    setRole(guildid, mode, count, duration, roleid) {
+    /*setRole(guildid, mode, count, duration, roleid) {
         return new Promise(async function(resolve, reject) {
             Role.findOne({
                 guildid: guildid,
@@ -264,65 +264,58 @@ module.exports = function(client) { return {
             })
         })
     }
-}}
+}*/}
 
-function getGuild(guildid, channelid) {
+function getChannel(channelid) {
     return new Promise(function(resolve, reject) {
-        Guild.findOne({
-            guildid: guildid
-        }, (err, guild) => {
+        Channel.findOne({
+            channelid: channelid
+        }, (err, channel) => {
             if (err) return reject(err);
-            if (!guild) {
-                let newGuild = new Guild({
-                    guildid: guildid,
-                    countingchannels: {
-                      [channelid]: {
-                        guildid: guildid,
-                        channelid: channelid,
-                        count: 0,
-                        countby: 1,
-                        message: '',
-                        modules: [],
-                        subscriptions: {},
-                        channeltopic: '',
-                        user: ''
-                      }
-                    }
+            if (!channel) {
+                let newChannel = new Channel({
+                  channelid: channelid,
+                  count: 0,
+                  countby: 1,
+                  //guildid: guildid,
+                  message: '',
+                  modules: [],
+                  subscriptions: {},
+                  channeltopic: '',
+                  user: ''
                 })
 
-                return resolve(newGuild);
-            } else return resolve(guild);
+                return resolve(newChannel);
+            } else return resolve(channel);
         })
     })
 }
 
-function updateTopic(guildid, channelid, client) {
+function updateTopic(channelid, client) {
     return new Promise(async function(resolve, reject) {
-        let guild = await getGuild(guildid, channelid);
+        let channel = await getChannel(channelid);
         try {
-            if (guild.countingchannels[channelid].channeltopic === "") await client.guilds.get(guildid).channels.get(guild.countingchannels[channelid].channelid).setTopic("**Next count:** " + (guild.countingchannels[channelid].count + guild.countingchannels[channelid].countby))
-            else if (guild.countingchannels[channelid].channeltopic !== "disable") await client.guilds.get(guildid).channels.get(guild.countingchannels[channelid].channelid).setTopic(guild.countingchannels[channelid].channeltopic.replace("{{COUNT}}", (guild.countingchannels[channelid].count + guild.countingchannels[channelid].countby)))
+            if (channel.channeltopic === "") await client.channels.get(channel.channelid).setTopic("**Next count:** " + (channel.count + channel.countby))
+            else if (channel.channeltopic !== "disable") await client.channels.get(channel.channelid).setTopic(channel.channeltopic.replace("{{COUNT}}", (channel.count + channel.countby)))
         } catch(e) {}
         resolve(true);
     })
 }
 
-async function cacheGuild(guildid, channelid) {
-    if (!savedGuilds[guildid]) {
-        let guild = await getGuild(guildid, channelid);
-        savedGuilds[guildid] = {};
+async function cacheChannel(channelid) {
+    if (!savedChannels[channelid]) {
+        let channel = await getChannel(channelid);
+        savedChannels[channelid] = {};
         //savedGuilds[guildid].guildid = guild.guildid;
         //if (!savedGuilds[guildid].countingchannels) {
-        savedGuilds[guildid].countingchannels = {};
-        savedGuilds[guildid].countingchannels[channelid] = {};
         //}
-        savedGuilds[guildid].countingchannels[channelid].count = guild.countingchannels[channelid].count;
-        savedGuilds[guildid].countingchannels[channelid].countby = guild.countingchannels[channelid].countby;
-        savedGuilds[guildid].countingchannels[channelid].guildid = guild.countingchannels[channelid].guildid;
-        savedGuilds[guildid].countingchannels[channelid].user = guild.countingchannels[channelid].user;
-        savedGuilds[guildid].countingchannels[channelid].modules = guild.countingchannels[channelid].modules;
-        savedGuilds[guildid].countingchannels[channelid].channeltopic = guild.countingchannels[channelid].channeltopic;
-        savedGuilds[guildid].countingchannels[channelid].message = guild.countingchannels[channelid].message;
+        savedChannels[channelid].count = channel.count;
+        savedChannels[channelid].countby = channel.countby;
+        savedChannels[channelid].guildid = channel.guildid;
+        savedChannels[channelid].user = channel.user;
+        savedChannels[channelid].modules = channel.modules;
+        savedChannels[channelid].channeltopic = channel.channeltopic;
+        savedChannels[channelid].message = channel.message;
 
         /*savedGuilds[guildid] = {};
         savedGuilds[guildid].channel = guild.channel;
@@ -333,14 +326,14 @@ async function cacheGuild(guildid, channelid) {
         savedGuilds[guildid].topic = guild.topic;
         savedGuilds[guildid].message = guild.message;*/
     }
-    timeoutGuilds[guildid] = 300;
-    return savedGuilds[guildid];
+    timeoutChannels[channelid] = 300;
+    return savedChannels[channelid];
 }
 
-setInterval(() => { for (var i in timeoutGuilds) {
-    timeoutGuilds[i] -= 1;
-    if (timeoutGuilds[i] < 1) {
-        delete savedGuilds[i];
-        delete timeoutGuilds[i];
+setInterval(() => { for (var i in timeoutChannels) {
+    timeoutChannels[i] -= 1;
+    if (timeoutChannels[i] < 1) {
+        delete savedChannels[i];
+        delete timeoutChannels[i];
     }
 }}, 1000)
