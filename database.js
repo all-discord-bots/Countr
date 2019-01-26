@@ -3,7 +3,18 @@ mongoose.connect(process.env.database_uri/*JSON.parse(require("fs").readFileSync
 
 const guildSchema = mongoose.Schema({
   guildid: String,
-  countingchannels: {}
+  countingchannels: {
+    channelid: String,
+    guildid: String,
+    count: Number,
+    countby: Number,
+    user: String,
+    modules: [],
+    subscriptions: {},
+    channeltopic: String,
+    message: String
+    
+  }
   //channel: String,
   //count: Number,
   //countby: Number,
@@ -316,8 +327,10 @@ async function cacheGuild(guildid, channelid) {
         let guild = await getGuild(guildid);
         savedGuilds[guildid] = {};
         //savedGuilds[guildid].guildid = guild.guildid;
-        if (!savedGuilds[guildid].countingchannels) savedGuilds[guildid].countingchannels = {};
-        savedGuilds[guildid].countingchannels[channelid] = {};
+        if (!savedGuilds[guildid].countingchannels) {
+          savedGuilds[guildid].countingchannels = {};
+          savedGuilds[guildid].countingchannels[channelid] = {};
+        }
         savedGuilds[guildid].countingchannels[channelid].count = guild.countingchannels[channelid].count;
         savedGuilds[guildid].countingchannels[channelid].countby = guild.countingchannels[channelid].countby;
         savedGuilds[guildid].countingchannels[channelid].guildid = guild.countingchannels[channelid].guildid;
@@ -325,7 +338,7 @@ async function cacheGuild(guildid, channelid) {
         savedGuilds[guildid].countingchannels[channelid].modules = guild.countingchannels[channelid].modules;
         savedGuilds[guildid].countingchannels[channelid].channeltopic = guild.countingchannels[channelid].channeltopic;
         savedGuilds[guildid].countingchannels[channelid].message = guild.countingchannels[channelid].message;
-        
+
         /*savedGuilds[guildid] = {};
         savedGuilds[guildid].channel = guild.channel;
         savedGuilds[guildid].count = guild.count;
