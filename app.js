@@ -28,7 +28,7 @@ async function updateActivity() {
     client.user.setActivity(`${prefix}help (${count} counting channels) [${client.shard.id}/${client.shard.count}]`, { type: 'WATCHING' })
 }
 
-async function processGuild(channel) {
+async function processChannel(channel) {
     //let guild = channel.guild;
     disabledChannels.push(channel.id);
     let modules = await database.getModules(channel.id);
