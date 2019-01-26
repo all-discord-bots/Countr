@@ -339,6 +339,7 @@ client.on('message', async (message) => {
 })
 
 client.on('messageUpdate', (oldMessage, newMessage) => {
+	if (oldMessage.author.bot) return;
 	client.emit('deleteMessage', newMessage, 'user');
 })
 
