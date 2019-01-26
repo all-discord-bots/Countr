@@ -361,22 +361,26 @@ client.on('deleteMessage', (message, deletedBy = 'user') => {
 })
 
 client.on('recalculateNumber', async (message) => {
+	if (!message.channel.permissionsFor(message.guild.me).has('READ_MESSAGE_HISTORY')) return;
 	if (client.deletedMessages.get(message.id).deletedBy !== 'bot') {
 		let countingChannel = await database.getCountingChannel(message.channel.id);
 		if (message.channel.id === countingChannel) {
-			if (message.channel.lastMessageID === message.id) {
-				let _count = await database.getCount(message.channel.id);
-				let count = _count.count;
-				let countby = _count.countby;
-				let user = _count.user;
-				database.subtractFromCount(message.channel.id, message.author.id); count -= countby;
-				return;
+			let _count = await database.getCount(message.channel.id);
+			let count = _count.count;
+			let countby = _count.countby;
+			let user = _count.user;
+			let messages = await message.channel.messages.fetch({ limit: 1, before: _count.message });
+			let fetched_count = messages.first() ? parseInt(messages.first().content) : 0;
+			if (/*message.channel.lastMessageID*/_count.message === message.id) {
+				if (fetched_count === (count - countby)) {
+					database.subtractFromCount(message.channel.id, message.author.id); count -= countby;
+				} else {
+					if (count === fetched_count) return;
+					database.setCount(message.channel.id, fetched_count);
+				}
 			} else {
-				if (!message.channel.permissionsFor(message.guild.me).has('READ_MESSAGE_HISTORY')) return;
-				if (message.channel.messages.has(message.channel.lastMessageID)) return;
-				let count = await message.channel.messages.fetch({ limit: 1, before: message.channel.lastMessageID });
-				database.setCount(message.channel.id, count.first() ? parseInt(count.first().content) : 0);
-				return;
+				if (message.channel.messages.has(_count.message/*message.channel.lastMessageID*/)) return;
+				database.setCount(message.channel.id, fetched_count);
 			}
 		}
 	}
