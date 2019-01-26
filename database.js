@@ -36,6 +36,12 @@ const channelSchema = mongoose.Schema({
   user: String
 }, { minimize: false })
 
+/*const memberSchema = mongoose.Schema({
+  guildid: String,
+  memberid: String,
+  mistakes: Number
+}, { minimize: false })*/
+
 const subscribeSchema = mongoose.Schema({
   channelid: String,
   count: Number,
