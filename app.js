@@ -9,7 +9,7 @@ const database = require('./database.js')(client)
 
 const allModules = ['allow-spam','talking','reposting','webhook', 'recover']
 
-let disabledGuilds = []
+let disabledChannels = []
 
 const prefix = process.env.PREFIX;
 
@@ -20,7 +20,7 @@ client.on('ready', async () => {
     }, 60000)
     
     //client.guilds.forEach(processGuild)
-    client.channels.filter((channel) => ['text'].includes(channel.type) && !channel.deleted).forEach(processGuild);
+    client.channels.filter((channel) => ['text'].includes(channel.type) && !channel.deleted).forEach(processChannel);
 })
 
 async function updateActivity() {
@@ -29,42 +29,42 @@ async function updateActivity() {
 }
 
 async function processGuild(channel) {
-    let guild = channel.guild;
-    disabledGuilds.push(guild.id);
-    let modules = await database.getModules(guild.id, channel.id);
-    if (!modules.includes('recover')) return disabledGuilds = disabledGuilds.filter((g) => g != guild.id);
+    //let guild = channel.guild;
+    disabledChannels.push(channel.id);
+    let modules = await database.getModules(channel.id);
+    if (!modules.includes('recover')) return disabledChannels = disabledChannels.filter((c) => c !== channel.id);
 
-    let countingChannel = await database.getCountingChannel(guild.id, channel.id);
-    //let channel = guild.channels.get(countingChannel)
+    let countingChannel = await database.getCountingChannel(channel.id);
+    let fetched_channel = channel.guild.channels.get(countingChannel)
 
-    if (guild.channels.has(countingChannel)) {
-        let _count = await database.getCount(guild.id, channel.id);
-        let messages = await channel.messages.fetch({ limit: 100, after: _count.message })//fetchMessages({ limit: 100, after: _count.message })
-        if (messages.array().length < 1) return disabledGuilds = disabledGuilds.filter((g) => g != guild.id);
+    if (fetched_channel) {
+        let _count = await database.getCount(channel.id);
+        let messages = await fetched_channel.messages.fetch({ limit: 100, after: _count.message })
+        if (messages.array().length < 1) return disabledChannels = disabledChannels.filter((c) => c !== channel.id);
 
-        let botMsg = await channel.send('**Making channel ready for counting..**\n:warning: Locking channel.')
-        await channel.overwritePermissions(guild.defaultRole, { SEND_MESSAGES: false })
+        let botMsg = await fetched_channel.send('**Making channel ready for counting..**\n:warning: Locking channel.')
+        await fetched_channel.overwritePermissions(channel.guild.defaultRole, { SEND_MESSAGES: false })
         .then(() => botMsg.edit('**Making channel ready for counting..**\n:warning: Channel locked. Deleting new entries.'))
         .catch(() => botMsg.edit('**Making channel ready for counting..**\n:warning: Failed to lock channel. Deleting new entries.'))
         let processing = true;
         let fail = false;
         while (processing) {
-            let _count = await database.getCount(guild.id, channel.id);
-            let messages = await channel.messages.fetch({ limit: 100, after: _count.message })//fetchMessages({ limit: 100, after: _count.message })
-            messages = messages.filter((m) => m.id != botMsg.id);
+            let _count = await database.getCount(channel.id);
+            let messages = await fetched_channel.messages.fetch({ limit: 100, after: _count.message })//fetchMessages({ limit: 100, after: _count.message })
+            messages = messages.filter((m) => m.id !== botMsg.id);
             if (messages.array().length < 1) processing = false;
-            else await channel.bulkDelete(messages)
+            else await fetched_channel.bulkDelete(messages)
             .catch(() => { fail = true; })
         }
         await botMsg.edit(`**Making channel ready for counting..**\n:warning: ${(fail ? 'Failed to delete entries.' : 'Deleted new entries.')} Restoring channel.`)
-        await channel.overwritePermissions(guild.defaultRole, { SEND_MESSAGES: true })
+        await fetched_channel.overwritePermissions(channel.guild.defaultRole, { SEND_MESSAGES: true })
         .then(() => botMsg.edit('**Making channel ready for counting..**\n:white_check_mark: Channel restored. Happy counting!'))
         .catch(() => botMsg.edit('**Making channel ready for counting..**\n:x: Failed to restore channel.'))
 
         setTimeout(() => { botMsg.delete() }, 5000)
     }
 
-    disabledGuilds = disabledGuilds.filter((g) => g != guild.id);
+    disabledChannels = disabledChannels.filter((c) => c !== channel.id);
 }
 
 client.on('message', async (message) => {
@@ -75,22 +75,22 @@ client.on('message', async (message) => {
 
     if (!message.guild) return; // if its in a DM, we don't want it to trigger any other command. If it's ${prefix}help or ${prefix}info, we don't want to send the info message above, but still not trigger any other command.
 
-    let countingChannel = await database.getCountingChannel(message.guild.id, message.channel.id);
+    let countingChannel = await database.getCountingChannel(message.channel.id);
     if (message.channel.id === countingChannel) {
-        if (disabledGuilds.includes(message.guild.id)) return message.delete()
+        if (disabledChannels.includes(message.channel.id)) return message.delete()
         if (message.author.bot && message.webhookID == null) return message.delete()
         if (message.webhookID != null) return;
-        let _count = await database.getCount(message.guild.id, message.channel.id);
+        let _count = await database.getCount(message.channel.id);
         let count = _count.count;
         let countby = _count.countby;
         let user = _count.user;
         if (message.content.startsWith('!') && isAdmin(message.member)) return; // if it starts with ! and the user has MANAGE_GUILD then don't process it.
-        if (message.type != 'DEFAULT') return; // ex. pin messages gets ignored
-        let modules = await database.getModules(message.guild.id, message.channel.id);
-        if (!modules.includes('allow-spam') && message.author.id == user) return message.delete() // we want someone else to count before the same person counts
+        if (message.type !== 'DEFAULT') return; // ex. pin messages gets ignored
+        let modules = await database.getModules(message.channel.id);
+        if (!modules.includes('allow-spam') && message.author.id === user) return message.delete() // we want someone else to count before the same person counts
         if (message.content.split(' ')[0] != (count + countby).toString()) return message.delete() // message.content.split(' ').splice(1)[0] = first word/number
-        if (!modules.includes('talking') && message.content != (count + countby).toString()) return message.delete() // if the module 'talking' isn't activated and there's some text after it, we delete it as well
-        database.addToCount(message.guild.id, message.channel.id, message.author.id); count += countby;
+        if (!modules.includes('talking') && message.content !== (count + countby).toString()) return message.delete() // if the module 'talking' isn't activated and there's some text after it, we delete it as well
+        database.addToCount(message.channel.id, message.author.id); count += countby;
         let countMsg = message;
         if (modules.includes('reposting')) {
             if (!modules.includes('webhook')) {
@@ -120,9 +120,9 @@ client.on('message', async (message) => {
             }).catch();
         }
 
-        database.setLastMessage(message.guild.id, message.channel.id, countMsg.id)
-        database.checkSubscribed(message.guild.id, message.channel.id, count, message.author.id, countMsg.id)
-        database.checkRole(message.guild.id, count, message.author.id)
+        database.setLastMessage(message.channel.id, countMsg.id)
+        //database.checkSubscribed(message.guild.id, message.channel.id, count, message.author.id, countMsg.id)
+        //database.checkRole(message.guild.id, count, message.author.id)
 
         return;
     }
@@ -152,7 +152,7 @@ client.on('message', async (message) => {
     if (['link','linkchannel','link-channel'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
+        let channel = message.guild.channels.find((c) => c.name === message.content.split(' ').splice(1).join(' '))
         if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
@@ -160,13 +160,13 @@ client.on('message', async (message) => {
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
         let botMsg = await message.channel.send(':hotsprings: Linking...')
-        return database.saveCountingChannel(message.guild.id, channel.id)
+        return database.saveCountingChannel(channel.id)
             .then(() => { botMsg.edit(`:white_check_mark: From now on, ${channel.id === message.channel.id ? 'this channel' : channel.toString()} will be used for counting.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['unlink','unlink-channel','unlinkchannel'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-	let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
+	let channel = message.guild.channels.find((c) => c.name === message.content.split(' ').splice(1).join(' '))
         if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
@@ -174,13 +174,13 @@ client.on('message', async (message) => {
         if (channel.type != 'text') return message.channel.send(':x: Invalid channel type.')
 
 	let botMsg = await message.channel.send(`:hotsprings: Unlinking ${channel.id === message.channel.id ? 'this channel' : channel.toString()}...`)
-        return database.saveCountingChannel(message.guild.id, channel.id, '0')
+        return database.saveCountingChannel(channel.id, '0')
             .then(() => { botMsg.edit(':white_check_mark: Unlinked the counting channel.') })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['reset','reset-count','resetcount'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1).join(' '))
+        let channel = message.guild.channels.find((c) => c.name === message.content.split(' ').splice(1).join(' '))
         if (message.content.split(' ').splice(1).join(' ').length < 1) channel = message.channel
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' '))
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1).join(' ').replace('<#', '').replace('>', ''))
@@ -188,13 +188,13 @@ client.on('message', async (message) => {
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
         let botMsg = await message.channel.send(':hotsprings: Resetting...')
-        return database.setCount(message.guild.id, channel.id, 0)
+        return database.setCount(channel.id, 0)
             .then(() => { botMsg.edit(`:white_check_mark: ${channel.id === message.channel.id ? 'this channel' : channel.toString()} count has been reset.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['toggle-module','togglemodule','toggle','toggle-setting','togglesetting'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0])
+        let channel = message.guild.channels.find((c) => c.name === message.content.split(' ').splice(1)[0])
         if (message.content.split(' ').splice(1)[0].length < 1) channel = message.channel
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0])
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].replace('<#', '').replace('>', ''))
@@ -204,19 +204,19 @@ client.on('message', async (message) => {
         let module = message.content.split(' ').splice(2)[0] // gets the second arg and makes it lower case
         if (!module) return message.channel.send(`:clipboard: Modules: \`${allModules.join('\`, \`')}\` - \`${prefix}help\` To read more about them`)
         module = module.toLowerCase()
-        let modules = await database.getModules(message.guild.id, channel.id);
+        let modules = await database.getModules(channel.id);
         if (allModules.includes(module)) {
             let state = modules.includes(module)
             let botMsg = await message.channel.send(`:hotsprings: ${(modules.includes(module) ? 'Disabling' : 'Enabling')}...`)
-            return database.toggleModule(message.guild.id, channel.id, module)
+            return database.toggleModule(channel.id, module)
               .then(() => { botMsg.edit(`:white_check_mark: Module \`${module}\` is now ${(state ? 'disabled' : 'enabled')} for ${channel.id === message.channel.id ? 'this channel' : channel.toString()}.`); })
               .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
         } else {
             return message.channel.send(':x: Module does not exist.')
         }
     } else if (['subscribe'].includes(base)) {
-	return message.channel.send(':x: This command is currently under maintanence!');
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0])
+	return message.channel.send(':x: This command is currently undergoing renovation!');
+        /*let channel = message.guild.channels.find((c) => c.name === message.content.split(' ').splice(1)[0])
         if (message.content.split(' ').splice(1)[0].length < 1) channel = message.channel
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0])
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].replace('<#', '').replace('>', ''))
@@ -226,17 +226,17 @@ client.on('message', async (message) => {
         let number = parseInt(message.content.split(' ').splice(2)[0])
         if (!number) return message.channel.send(':x: Invalid count.')
 
-        let count = await database.getCount(message.guild.id, channel.id);
+        let count = await database.getCount(channel.id);
         if (number <= count.count) return message.channel.send(':warning: You can\'t subscribe to a count that\'s under the current count.')
 
         let botMsg = await message.channel.send(':hotsprings: Subscribing...')
         return database.subscribe(message.guild.id, channel.id, message.author.id, number)
             .then(() => { botMsg.edit(`:white_check_mark: I will notify you when this server reach ${number} total counts.`) })
-            .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
+            .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })*/
     } else if (['set-topic','settopic','topic'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-	let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0])
+	let channel = message.guild.channels.find((c) => c.name === message.content.split(' ').splice(1)[0])
         if (message.content.split(' ').splice(1)[0].length < 1) channel = message.channel
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0])
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].replace('<#', '').replace('>', ''))
@@ -246,15 +246,15 @@ client.on('message', async (message) => {
         let topic = message.content.split(' ').splice(2).join(' ');
 
         let botMsg = await message.channel.send(':hotsprings: Saving...')
-        return database.setTopic(message.guild.id, channel.id, topic).then(() => {
+        return database.setTopic(channel.id, topic).then(() => {
             if (topic.length == 0) return botMsg.edit(':white_check_mark: The topic has been cleared.')
             return botMsg.edit(':white_check_mark: The topic has been updated.')
         }).catch(() => {
             return botMsg.edit(':anger: An unknown error occoured. Try again later.')
         })
     } else if (['role'].includes(base)) {
-	return message.channel.send(':x: This command is currently under maintanence!');
-        if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
+	return message.channel.send(':x: This command is currently undergoing renovation!');
+        /*if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
         let mode = message.content.split(' ').splice(1)[0];
         let count = parseInt(message.content.split(' ').splice(2)[0]);
         let duration = message.content.split(' ').splice(3)[0];
@@ -270,11 +270,11 @@ client.on('message', async (message) => {
         let botMsg = await message.channel.send(':hotsprings: Saving...')
         return database.setRole(message.guild.id, mode, count, duration, role.id)
             .then(() => { botMsg.edit(`:white_check_mark: I will give the role called ${role.name} when ${(mode == 'each' ? `each ${count} is counted` : `someone reach ${count}`)} and the role will ${(duration == 'permanent' ? 'stay permanent until removed or a new role reward is set.' : 'stay until someone else get the role.')}`) })
-            .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
+            .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })*/
     } else if (['set-starting-count','setstartingcount','startingcount','starting-count','set-count','setcount','set-start-count','setstartcount','startcount','start-count'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0])
+        let channel = message.guild.channels.find((c) => c.name === message.content.split(' ').splice(1)[0])
         if (message.content.split(' ').splice(1)[0].length < 1) channel = message.channel
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0])
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].replace('<#', '').replace('>', ''))
@@ -285,13 +285,13 @@ client.on('message', async (message) => {
         if (isNaN(count)) return message.channel.send(`:x: Invalid count. Use \`${prefix}set-starting-count <channel> <count>\``);
 
         let botMsg = await message.channel.send(':hotsprings: Saving...')
-        return database.setCount(message.guild.id, channel.id, count)
+        return database.setCount(channel.id, count)
             .then(() => { botMsg.edit(`:white_check_mark: The count for ${channel.id === message.channel.id ? 'this channel' : channel.toString()} has been set to ${count}.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['set-count-by','set-counting-by','setcountby','setcountingby','count-by','counting-by','countby','countingby'].includes(base)) {
         if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 
-        let channel = message.guild.channels.find((c) => c.name == message.content.split(' ').splice(1)[0])
+        let channel = message.guild.channels.find((c) => c.name === message.content.split(' ').splice(1)[0])
         if (message.content.split(' ').splice(1)[0].length < 1) channel = message.channel
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0])
         if (!channel) channel = message.guild.channels.get(message.content.split(' ').splice(1)[0].replace('<#', '').replace('>', ''))
@@ -302,7 +302,7 @@ client.on('message', async (message) => {
         if (by === 0 || isNaN(by)) return message.channel.send(`:x: Invalid amount. Use \`${prefix}set-count-by <channel> <by>\``);
 
         let botMsg = await message.channel.send(':hotsprings: Saving...')
-        return database.setCountBy(message.guild.id, channel.id, by)
+        return database.setCountBy(channel.id, by)
             .then(() => { botMsg.edit(`:white_check_mark: You will now count by ${by} in ${channel.id === message.channel.id ? 'this channel' : channel.toString()}.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (RegExp(`^(<@!?${client.user.id}>)`).test(content) || base === 'prefix') {
