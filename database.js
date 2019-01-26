@@ -13,7 +13,6 @@ const guildSchema = mongoose.Schema({
     subscriptions: {},
     channeltopic: String,
     message: String
-    
   }
   //channel: String,
   //count: Number,
@@ -81,7 +80,7 @@ module.exports = function(client) { return {
             };
 
             let guild = await getGuild(guildid, channelid);
-            guild.countingchannels = savedGuilds[guildid].countingchannels;
+            guild.countingchannels[channelid] = savedGuilds[guildid].countingchannels[channelid];
             guild.save().then(resolve).catch(reject);
         });
     },
