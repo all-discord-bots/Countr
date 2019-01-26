@@ -269,7 +269,7 @@ module.exports = function(client) { return {
 function getChannel(channelid) {
     return new Promise(function(resolve, reject) {
         Channel.findOne({
-            channelid: channelid
+          channelid: channelid
         }, (err, channel) => {
             if (err) return reject(err);
             if (!channel) {
