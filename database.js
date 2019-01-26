@@ -132,7 +132,7 @@ module.exports = function(client) { return {
           
             let channel = await getChannel(channelid);
             channel.countby = savedChannels[channelid].countby;
-            channel.countingchannels[channelid].user = savedChannels[channelid].user;
+            channel.user = savedChannels[channelid].user;
             await channel.save().then(resolve).catch(reject);
             updateTopic(channelid, client)
         })
