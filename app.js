@@ -160,7 +160,7 @@ client.on('message', async (message) => {
         if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.')
 
         let botMsg = await message.channel.send(':hotsprings: Linking...')
-        return database.saveCountingChannel(channel.id)
+        return database.saveCountingChannel(channel.id, channel.id)
             .then(() => { botMsg.edit(`:white_check_mark: From now on, ${channel.id === message.channel.id ? 'this channel' : channel.toString()} will be used for counting.`) })
             .catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') })
     } else if (['unlink','unlink-channel','unlinkchannel'].includes(base)) {
