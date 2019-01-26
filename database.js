@@ -60,10 +60,10 @@ const Subscribe = mongoose.model("Subscribe", subscribeSchema);
 const Role = mongoose.model("Role", roleSchema);
 
 module.exports = function(client) { return {
-    saveCountingChannel(channelid) {
+    saveCountingChannel(channelid, newchannelid) {
         return new Promise(async function(resolve, reject) {
             await cacheChannel(channelid);
-            savedChannels[channelid].channelid = channelid;
+            savedChannels[channelid].channelid = newchannelid;
 
             let channel = await getChannel(channelid);
             channel.channelid = savedChannels[channelid].channelid;
