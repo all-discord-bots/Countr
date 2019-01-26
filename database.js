@@ -315,6 +315,7 @@ async function cacheGuild(guildid) {
     if (!savedGuilds[guildid]) {
         let guild = await getGuild(guildid);
         savedGuilds[guildid] = {
+          guildid: guildid,
           countingchannels: guild.countingchannels
         };
         /*savedGuilds[guildid] = {};
