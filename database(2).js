@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 mongoose.connect(process.env.database_uri/*JSON.parse(require("fs").readFileSync("./config.json")).database_uri*/, { useNewUrlParser: true });
 
-const guildSchema = mongoose.Schema({
+/*const guildSchema = mongoose.Schema({
   guildid: String,
   countingchannels: {
     channelid: String,
@@ -13,8 +13,7 @@ const guildSchema = mongoose.Schema({
     subscriptions: {},
     channeltopic: String,
     message: String
-    
-  }
+  }*/
   //channel: String,
   //count: Number,
   //countby: Number,
@@ -23,9 +22,9 @@ const guildSchema = mongoose.Schema({
   //subscriptions: {}, // deprecated
   //topic: String,
   //message: String
-}, { minimize: false })
+//}, { minimize: false })
 
-/*const channelSchema = mongoose.Schema({
+const channelSchema = mongoose.Schema({
   channelid: String,
   count: Number,
   countby: Number,
@@ -33,9 +32,9 @@ const guildSchema = mongoose.Schema({
   message: String,
   modules: [],
   subscriptions: {}, // deprecated
-  topic: String,
+  channeltopic: String,
   user: String
-}, { minimize: false })*/
+}, { minimize: false })
 
 const subscribeSchema = mongoose.Schema({
   channelid: String,
@@ -55,30 +54,27 @@ const roleSchema = mongoose.Schema({
 let savedGuilds = {}
 let timeoutGuilds = {}
 
-const Guild = mongoose.model("Guild", guildSchema);
-//const Channel = mongoose.model("Channel", channelSchema);
+//const Guild = mongoose.model("Guild", guildSchema);
+const Channel = mongoose.model("Channel", channelSchema);
 const Subscribe = mongoose.model("Subscribe", subscribeSchema);
 const Role = mongoose.model("Role", roleSchema);
 
 module.exports = function(client) { return {
     saveCountingChannel(guildid, channelid) {
         return new Promise(async function(resolve, reject) {
-            await cacheGuild(guildid, channelid);
-            savedGuilds[guildid] = {
-              countingchannels: {},
-              guildid: guildid
-            };
-            savedGuilds[guildid].countingchannels[channelid] = {
-              channelid: channelid,
-              count: 0,
-              countby: 1,
-              guildid: guildid,
-              message: '',
-              modules: [],
-              subscriptions: {}, // deprecated
-              channeltopic: '',
-              user: ''
-            };
+            await cacheGuild(guildid);
+            savedGuilds[guildid].channel = channelid;
+          
+            let guild = await getGuild(guildid);
+            guild.channel = savedGuilds[guildid].channel;
+            guild.save().then(resolve).catch(reject);
+        });
+},
+    saveCountingChannel(channelid) {
+        return new Promise(async function(resolve, reject) {
+            await cacheChannel(channelid);
+            savedChannels[channelid].channelid = channelid;
+// stopped here
 
             let guild = await getGuild(guildid, channelid);
             guild.countingchannels = savedGuilds[guildid].countingchannels;
