@@ -31,10 +31,11 @@ async function updateActivity() {
 
 async function processChannel(channel) {
 	const mongoose = require('mongoose');
-	if (mongoose.connections.length && mongoose.connections[0].collections.channels.collection.findOne({ channelid: channel.id }) !== null) {
-		database.saveCountingChannel(channel.id, channel.id)
-			.then(() => { console.log(`finished fetching channel ${channel.id}`) })
-			.catch(() => { console.error(`failed to fetch channel ${channel.id}`) });
+	const documents = await mongoose.connections[0].collections.channels.collection.findOne({ channelid: channel.id });
+	if (mongoose.connections.length && documents !== null) {
+		database.saveCountingChannel(documents.channelid, documents.channelid)
+			.then(() => { console.log(`finished fetching channel ${documents.channelid}`) })
+			.catch(() => { console.error(`failed to fetch channel ${documents.channelid}`) });
 	};
 	//let guild = channel.guild;
 	disabledChannels.push(channel.id);
