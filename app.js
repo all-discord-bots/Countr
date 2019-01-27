@@ -262,8 +262,6 @@ client.on('message', async (message) => {
 		const sendAs = message.flags.output || message.flags["output-to"] || (message.flags.log ? 'log' : null);
 		return handleEvalMessage(message, { sendAs }, { success, result, time, footer, language });
 	} else if (['exec','execute'].includes(cmd) && message.author.id === '269247101697916939') {
-		const username = require('os').userInfo().username;
-
 		let parsed = client.utils.parseArgs(args, ['r', 'd', 's', 'f', 'w', 'fn:', 'l:']);
 		if (parsed.length < 1) return message.channel.send(':x: You must provide a command to run!');
 		
@@ -458,7 +456,7 @@ function clean(text) {
 function cleanexec(data) {
 	return `${data}`
 		.replace(/`/g, '\u200b$&')
-		.replace(new RegExp(username, 'g'), '<Hidden>')
+		.replace(new RegExp(require('os').userInfo().username, 'g'), '<Hidden>')
 		.replace(/\[[0-9]*m/g, '');
 };
 
