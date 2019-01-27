@@ -404,21 +404,23 @@ client.on('recalculateNumber', async (message) => {
 });
 
 function get_instance(message, type, arg_number) {
-	let instance;
 	const args = parseCommand(message).args;
 	const arg = args[arg_number];
-	switch (type) {
-		case 'GuildTextChannel':
-			let channel = message.guild.channels.find((c) => c.name === arg);
-			if (args.length < 1) channel = message.channel;
-			if (!channel) channel = message.guild.channels.get(arg);
-			if (!channel) channel = message.guild.channels.get(arg.replace(/(^<#|>$)/g, ''));
-			if (!channel) return message.channel.send(':x: Invalid channel.');
-			if (channel.type !== 'text') return message.channel.send(':x: Invalid channel type.');
-			instance = channel;
-			break;
+	if (type === 'GuildTextChannel') {
+		let channel = message.guild.channels.find((c) => c.name === arg);
+		if (args.length < 1) channel = message.channel;
+		if (!channel) channel = message.guild.channels.get(arg);
+		if (!channel) channel = message.guild.channels.get(arg.replace(/(^<#|>$)/g, ''));
+		if (!channel) {
+			return message.channel.send(':x: Invalid channel.');
+			throw 'Invalid channel.';
+		}
+		if (channel.type !== 'text') {
+			return message.channel.send(':x: Invalid channel type.');
+			throw 'Invalid channel type';
+		}
+		return channel;
 	}
-	return instance;
 };
 
 function isAdmin(member) {
