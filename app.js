@@ -124,6 +124,7 @@ client.on('message', async (message) => {
 
 	if (message.author.bot) return;
 	const command = parseCommand(message);
+	if (!command) return;
 	let cmd = command.name;
 	let args = command.args;
 	message.flags = command.flags;
