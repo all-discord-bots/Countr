@@ -34,7 +34,7 @@ async function processChannel(channel) {
 	if (mongoose.connections.length && mongoose.connections[0].collections.channels.collection.findOne({ channelid: channel.id }) !== null) {
 		database.saveCountingChannel(channel.id, channel.id)
 			.then(() => { console.log(`finished fetching channel ${channel.id}`) })
-			.catch(() => { console.error(`failed to fetch channel ${channel.id}` });
+			.catch(() => { console.error(`failed to fetch channel ${channel.id}`) });
 	};
 	//let guild = channel.guild;
 	disabledChannels.push(channel.id);
