@@ -436,7 +436,7 @@ function parseCommand(message) {
 	}
 	if (!split1[0].match(spli)) spli = new RegExp(cmd_prefix.trim(), 'gi');
 	if (split1[0].match(spli).length !== 1 || split1[0].match(spli)[0].length !== cmd_prefix.trim().length) return;
-	let messageFlags = split.slice(1).filter((flag) => flag.startsWith('--') && flag.length > 2).map((flag) => (flag.includes('=') ? m : `${flag}=${flag}`).replace(/(\-\-)/g, '').split('='));
+	let messageFlags = split.slice(1).filter((flag) => flag.startsWith('--') && flag.length > 2).map((flag) => (flag.includes('=') ? flag : `${flag}=${flag}`).replace(/(\-\-)/g, '').split('='));
 	const flags = {};
 	messageFlags.map((flag) => flags[flag[0]] = flag[1]);
 	return {
