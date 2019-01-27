@@ -365,7 +365,7 @@ client.on('messageDelete', async (message) => {
 	if (!modules.includes('reposting')) client.emit('recalculateNumber', message);
 })
 
-client.on('deleteMessage', (message deletedBy = 'user') => {
+client.on('deleteMessage', (message, deletedBy = 'user') => {
 	message.deletedBy = deletedBy;
 	client.deletedMessages.set(message.id, message);
 	if (message.channel.permissionsFor(message.guild.me).has('MANAGE_MESSAGES')) message.delete();
