@@ -411,14 +411,8 @@ function get_instance(message, type, arg_number) {
 		if (args.length < 1) channel = message.channel;
 		if (!channel) channel = message.guild.channels.get(arg);
 		if (!channel) channel = message.guild.channels.get(arg.replace(/(^<#|>$)/g, ''));
-		if (!channel) {
-			return message.channel.send(':x: Invalid channel.');
-			throw 'Invalid channel.';
-		}
-		if (channel.type !== 'text') {
-			return message.channel.send(':x: Invalid channel type.');
-			throw 'Invalid channel type';
-		}
+		if (!channel) throw message.channel.send(':x: Invalid channel.');
+		if (channel.type !== 'text') throw message.channel.send(':x: Invalid channel type.');
 		return channel;
 	}
 };
