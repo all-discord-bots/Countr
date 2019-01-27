@@ -296,13 +296,13 @@ client.on('message', async (message) => {
 					if (!output) {
 						return resolve();
 					}
-					await client.utils.sendLarge(message, `${cleanexec(output)}`, `**\`OUTPUT\`**`, opts);
+					await client.utils.sendLarge(message.channel, `${cleanexec(output)}`, `**\`OUTPUT\`**`, opts);
 					resolve();
 				});
 			});
 		} else {
-			ps.stdout.on('data', (data) => client.utils.sendLarge(message, `${cleanexec(data)}`, `**\`OUTPUT\`**`, opts));
-			ps.stderr.on('data', (data) => client.utils.sendLarge(message, `${cleanexec(data)}`, `**\`ERROR\`**`, opts));
+			ps.stdout.on('data', (data) => client.utils.sendLarge(message.channel, `${cleanexec(data)}`, `**\`OUTPUT\`**`, opts));
+			ps.stderr.on('data', (data) => client.utils.sendLarge(message.channel, `${cleanexec(data)}`, `**\`ERROR\`**`, opts));
 			await new Promise((resolve) => ps.once('exit', resolve));
 		}
 		return;
