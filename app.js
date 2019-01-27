@@ -93,7 +93,7 @@ client.on('message', async (message) => {
 				countMsg = await message.channel.send({
 					embed: {
 						description: `${message.author}: ${message.content}`,
-						color: message.member.displayColor ? message.member.displayColor : 3553598;
+						color: message.member.displayColor ? message.member.displayColor : 3553598
 					}
 				});
 				client.emit('deleteMessage', message, 'bot');
