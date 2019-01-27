@@ -496,7 +496,7 @@ function timedEval(message, code, flagTime) {
 	]);
 };
 
-await function handleEvalMessage(message, options, { success, result, time, footer, language }) {
+function handleEvalMessage(message, options, { success, result, time, footer, language }) {
 	switch (options.sendAs) {
 		case 'log':
 			console.log(result);
