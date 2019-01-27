@@ -484,7 +484,7 @@ function COMMAND_EVAL_OUTPUT_CONSOLE(time, type) {
 };
 
 function timedEval(message, code, flagTime) {
-	if (flagTime === Infinity || flagTime === 0) return eval(message, code);
+	if (flagTime === Infinity || flagTime === 0) return execEval(message, code);
 	return Promise.race([
 		sleep(flagTime).then(() => ({
 			success: false,
@@ -492,7 +492,7 @@ function timedEval(message, code, flagTime) {
 			time: "⏱ ...",
 			type: "EvalTimeoutError",
 		})),
-		eval(message, code),
+		execEval(message, code),
 	]);
 };
 
@@ -523,7 +523,7 @@ function formatTime(syncTime, asyncTime) {
 	return asyncTime ? `⏱ ${asyncTime}<${syncTime}>` : `⏱ ${syncTime}`;
 };
 
-async function eval(msg, code) {
+async function execEval(msg, code) {
 	const stopwatch = new Stopwatch();
 	let success, syncTime, asyncTime, result;
 	let thenable = false;
