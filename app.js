@@ -524,6 +524,7 @@ function formatTime(syncTime, asyncTime) {
 };
 
 async function eval(msg, code) {
+	const stopwatch = new Stopwatch();
 	let success, syncTime, asyncTime, result;
 	let thenable = false;
 	let type;
