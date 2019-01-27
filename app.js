@@ -9,7 +9,7 @@ const database = require('./database.js')(client);
 const prefix = process.env.PREFIX;
 const allModules = ['allow-spam','talking','reposting','webhook', 'recover'];
 const sleep = promisify(setTimeout);
-let disabledChannels = [];
+let disabledChannels = client.disabledChannels = [];
 
 client.deletedMessages = new Collection();
 client.utils = require('./utils');
@@ -30,6 +30,12 @@ async function updateActivity() {
 };
 
 async function processChannel(channel) {
+	const mongoose = require('mongoose');
+	if (mongoose.connections.length && mongoose.connections[0].collections.channels.collection.findOne({ channelid: channel.id }) !== null) {
+		database.saveCountingChannel(channel.id, channel.id)
+			.then(() => { console.log(`finished fetching channel ${channel.id}`) })
+			.catch(() => { console.error(`failed to fetch channel ${channel.id}` });
+	};
 	//let guild = channel.guild;
 	disabledChannels.push(channel.id);
 	let modules = await database.getModules(channel.id);
