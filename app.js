@@ -84,7 +84,7 @@ client.on('message', async (message) => {
 		if (message.type !== 'DEFAULT') return; // ex. pin messages gets ignored
 		let modules = await database.getModules(message.channel.id);
 		if (!modules.includes('allow-spam') && message.author.id === user) return client.emit('deleteMessage', message, 'bot'); // we want someone else to count before the same person counts
-		if (message.content.split(' ')[0] != (count + countby).toString()) return client.emit('deleteMessage', message, 'bot');) // message.content.split(' ').splice(1)[0] = first word/number
+		if (message.content.split(' ')[0] != (count + countby).toString()) return client.emit('deleteMessage', message, 'bot'); // message.content.split(' ').splice(1)[0] = first word/number
 		if (!modules.includes('talking') && message.content !== (count + countby).toString()) return client.emit('deleteMessage', message, 'bot'); // if the module 'talking' isn't activated and there's some text after it, we delete it as well
 		database.addToCount(message.channel.id, message.author.id); count += countby;
 		let countMsg = message;
