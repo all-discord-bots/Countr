@@ -32,7 +32,7 @@ const channelSchema = mongoose.Schema({
   message: String,
   modules: [],
   subscriptions: {}, // deprecated
-  channeltopic: String,
+  topic: String,
   user: String
 }, { minimize: false })
 
@@ -219,10 +219,10 @@ module.exports = function(client) { return {
     setTopic(channelid, topic) {
         return new Promise(async function(resolve, reject) {
             await cacheChannel(channelid);
-            if (['disable', ''].includes(savedChannels[channelid].channeltopic)) savedChannels[channelid].channeltopic = topic; else savedChannels[channelid].channeltopic = topic + (topic.includes("{{COUNT}}") ? "" : (topic == "" ? "" : " | ") + "**Next count:** {{COUNT}}")
+            if (['disable', ''].includes(savedChannels[channelid].topic)) savedChannels[channelid].topic = topic; else savedChannels[channelid].topic = topic + (topic.includes("{{COUNT}}") ? "" : (topic === "" ? "" : " | ") + "**Next count:** {{COUNT}}")
           
             let channel = await getChannel(channelid);
-            channel.channeltopic = savedChannels[channelid].channeltopic;
+            channel.topic = savedChannels[channelid].topic;
             await channel.save().then(resolve).catch(reject);
             updateTopic(channelid, client)
         })
@@ -230,7 +230,7 @@ module.exports = function(client) { return {
     getTopic(channelid) {
         return new Promise(async function(resolve, reject) {
             let channel = await cacheChannel(channelid);
-            resolve(channel.channeltopic)
+            resolve(channel.topic)
         })
     },
     getChannelCount() {
@@ -300,7 +300,7 @@ function getChannel(channelid) {
                   message: '',
                   modules: [],
                   subscriptions: {},
-                  channeltopic: '',
+                  topic: '',
                   user: ''
                 })
 
@@ -314,8 +314,8 @@ function updateTopic(channelid, client) {
     return new Promise(async function(resolve, reject) {
         let channel = await getChannel(channelid);
         try {
-            if (channel.channeltopic === "") await client.channels.get(channel.channelid).setTopic("**Next count:** " + (channel.count + channel.countby))
-            else if (channel.channeltopic !== "disable") await client.channels.get(channel.channelid).setTopic(channel.channeltopic.replace("{{COUNT}}", (channel.count + channel.countby)))
+            if (channel.topic === "") await client.channels.get(channel.channelid).setTopic("**Next count:** " + (channel.count + channel.countby))
+            else if (channel.topic !== "disable") await client.channels.get(channel.channelid).setTopic(channel.topic.replace("{{COUNT}}", (channel.count + channel.countby)))
         } catch(e) {}
         resolve(true);
     })
@@ -333,7 +333,7 @@ async function cacheChannel(channelid) {
         savedChannels[channelid].guildid = channel.guildid;
         savedChannels[channelid].user = channel.user;
         savedChannels[channelid].modules = channel.modules;
-        savedChannels[channelid].channeltopic = channel.channeltopic;
+        savedChannels[channelid].topic = channel.topic;
         savedChannels[channelid].message = channel.message;
 
         /*savedGuilds[guildid] = {};
