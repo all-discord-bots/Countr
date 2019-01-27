@@ -1,3 +1,43 @@
+const parseArgs = (args, options) => {
+	if (!options)
+		return args;
+	if (typeof options === 'string')
+		options = [options];
+
+	let optionValues = {};
+
+	let i;
+	for (i = 0; i < args.length; i++) {
+		let arg = args[i];
+		if (!arg.startsWith('--')) {
+			break;
+		}
+
+		let label = arg.substr(1);
+
+		if (args.indexOf(label + ':') > -1) {
+			let leftover = args.slice(i + 1).join(' ');
+			let matches = leftover.match(/^"(.+?)"/);
+			if (matches) {
+				optionValues[label] = matches[1];
+				i += matches[0].split(' ').length;
+			} else {
+				i++;
+				optionValues[label] = args[i];
+			}
+		} else if (args.indexOf(label) > -1) {
+			optionValues[label] = true;
+		} else {
+			break;
+		}
+	}
+
+	return {
+		options: optionValues,
+		leftover: args.slice(i)
+	};
+};
+
 const multiSend = (channel, messages, delay) => {
 	delay = delay || 100;
 	messages.forEach((m, i) => {
@@ -6,7 +46,6 @@ const multiSend = (channel, messages, delay) => {
 		}, delay * i);
 	});
 };
-
 
 const sendLarge = (channel, largeMessage, status = '', options = {}) => {
 	let message = largeMessage;
@@ -51,6 +90,7 @@ const sendLarge = (channel, largeMessage, status = '', options = {}) => {
 };
 
 module.exports = {
+	parseArgs,
 	multiSend,
 	sendLarge
 };
