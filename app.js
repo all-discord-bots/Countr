@@ -31,9 +31,9 @@ async function updateActivity() {
 
 async function processChannel(channel) {
 	const mongoose = require('mongoose');
-	const documents = await mongoose.connections[0].collections.channels.collection.findOne({ channelid: channel.id });
+	const documents = await mongoose.connection.collections.channels.collection.findOne({ channelid: channel.id });
 	if (mongoose.connections.length && documents !== null) {
-		database.saveCountingChannel(documents.channelid, documents.channelid)
+		await database.saveCountingChannel(documents.channelid, documents.channelid)
 			.then(() => { console.log(`finished fetching channel ${documents.channelid}`) })
 			.catch(() => { console.error(`failed to fetch channel ${documents.channelid}`) });
 	};
@@ -123,7 +123,7 @@ client.on('message', async (message) => {
 				}).catch();
 			}
 		}
-		database.setLastMessage(message.channel.id, countMsg.id);
+		await database.setLastMessage(message.channel.id, countMsg.id);
 		//database.checkSubscribed(message.guild.id, message.channel.id, count, message.author.id, countMsg.id);
 		//database.checkRole(message.guild.id, count, message.author.id);
 		return;
