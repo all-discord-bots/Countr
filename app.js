@@ -12,6 +12,7 @@ const sleep = promisify(setTimeout);
 let disabledChannels = client.disabledChannels = [];
 
 client.deletedMessages = new Collection();
+const mistakes = client.mistakes = new Map();
 client.utils = require('./utils');
 
 client.on('ready', async () => {
@@ -71,6 +72,10 @@ async function processChannel(channel) {
 };
 
 client.on('message', async (message) => {
+	if (!message.author.bot) {
+		if (!mistakes.has(message.channel.id)) mistakes.set(message.channel.id, new Map());
+		if (mistakes.has(message.channel.id) && !mistakes.get(message.channel.id).has(message.author.id)) mistakes.get(message.channel.id).set(message.author.id, 0);
+	}
 
 	let content = message.content.toLowerCase();
 
@@ -91,7 +96,10 @@ client.on('message', async (message) => {
 		if (message.type !== 'DEFAULT') return; // ex. pin messages gets ignored
 		let modules = await database.getModules(message.channel.id);
 		if (!modules.includes('allow-spam') && message.author.id === user) return client.emit('deleteMessage', message, 'bot'); // we want someone else to count before the same person counts
-		if (message.content.split(' ')[0] != (count + countby).toString()) return client.emit('deleteMessage', message, 'bot'); // message.content.split(' ').splice(1)[0] = first word/number
+		if (message.content.split(' ')[0] != (count + countby).toString()) {
+			mistakes.get(message.channel.id).set(message.author.id, mistakes.get(message.channel.id).get(message.author.id));
+			return client.emit('deleteMessage', message, 'bot'); // message.content.split(' ').splice(1)[0] = first word/number
+		}
 		if (!modules.includes('talking') && message.content !== (count + countby).toString()) return client.emit('deleteMessage', message, 'bot'); // if the module 'talking' isn't activated and there's some text after it, we delete it as well
 		await database.addToCount(message.channel.id, message.author.id); count += countby;
 		let countMsg = message;
@@ -124,8 +132,8 @@ client.on('message', async (message) => {
 			}
 		}
 		await database.setLastMessage(message.channel.id, countMsg.id);
-		//database.checkSubscribed(message.guild.id, message.channel.id, count, message.author.id, countMsg.id);
-		//database.checkRole(message.guild.id, count, message.author.id);
+		//await database.checkSubscribed(message.guild.id, message.channel.id, count, message.author.id, countMsg.id);
+		//await database.checkRole(message.guild.id, count, message.author.id);
 		return;
 	}
 
@@ -142,7 +150,7 @@ client.on('message', async (message) => {
 		let channel = get_instance(message, 'GuildTextChannel', 0);
 
 		let botMsg = await message.channel.send(':hotsprings: Linking...');
-		return database.saveCountingChannel(channel.id, channel.id)
+		return await database.saveCountingChannel(channel.id, channel.id)
 			.then(() => { botMsg.edit(`:white_check_mark: From now on, ${channel.id === message.channel.id ? 'this channel' : channel.toString()} will be used for counting.`) })
 			.catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') });
 	} else if (['unlink','unlink-channel','unlinkchannel'].includes(cmd)) {
@@ -151,7 +159,7 @@ client.on('message', async (message) => {
 		let channel = get_instance(message, 'GuildTextChannel', 0);
 
 		let botMsg = await message.channel.send(`:hotsprings: Unlinking ${channel.id === message.channel.id ? 'this channel' : channel.toString()}...`);
-		return database.saveCountingChannel(channel.id, '0')
+		return await database.saveCountingChannel(channel.id, '0')
 			.then(() => { botMsg.edit(':white_check_mark: Unlinked the counting channel.') })
 			.catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') });
 	} else if (['reset','reset-count','resetcount'].includes(cmd)) {
@@ -160,7 +168,7 @@ client.on('message', async (message) => {
 		let channel = get_instance(message, 'GuildTextChannel', 0);
 
 		let botMsg = await message.channel.send(':hotsprings: Resetting...');
-		return database.setCount(channel.id, 0)
+		return await database.setCount(channel.id, 0)
 			.then(() => { botMsg.edit(`:white_check_mark: ${channel.id === message.channel.id ? 'this channel' : channel.toString()} count has been reset.`) })
 			.catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') });
 	} else if (['toggle-module','togglemodule','toggle','toggle-setting','togglesetting'].includes(cmd)) {
@@ -175,7 +183,7 @@ client.on('message', async (message) => {
 		if (allModules.includes(module)) {
 			let state = modules.includes(module);
 			let botMsg = await message.channel.send(`:hotsprings: ${(modules.includes(module) ? 'Disabling' : 'Enabling')}...`);
-			return database.toggleModule(channel.id, module)
+			return await database.toggleModule(channel.id, module)
 				.then(() => { botMsg.edit(`:white_check_mark: Module \`${module}\` is now ${(state ? 'disabled' : 'enabled')} for ${channel.id === message.channel.id ? 'this channel' : channel.toString()}.`); })
 				.catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') });
 		} else {
@@ -197,7 +205,7 @@ client.on('message', async (message) => {
 		if (number <= count.count) return message.channel.send(':warning: You can\'t subscribe to a count that\'s under the current count.');
 
 		let botMsg = await message.channel.send(':hotsprings: Subscribing...');
-		return database.subscribe(message.guild.id, channel.id, message.author.id, number)
+		return await database.subscribe(message.guild.id, channel.id, message.author.id, number)
 			.then(() => { botMsg.edit(`:white_check_mark: I will notify you when this server reach ${number} total counts.`) })
 			.catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') });*/
 	} else if (['set-topic','settopic','topic'].includes(cmd)) {
@@ -208,14 +216,14 @@ client.on('message', async (message) => {
 		let topic = args.splice(1).join(' ');
 
 		let botMsg = await message.channel.send(':hotsprings: Saving...');
-		return database.setTopic(channel.id, topic).then(() => {
+		return await database.setTopic(channel.id, topic).then(() => {
 			if (topic.length === 0) return botMsg.edit(':white_check_mark: The topic has been cleared.');
 			return botMsg.edit(':white_check_mark: The topic has been updated.');
 		}).catch(() => {
 			return botMsg.edit(':anger: An unknown error occoured. Try again later.');
 		})
 	} else if (['role'].includes(cmd)) {
-		return message.channel.send(':x: This command is currently undergoing renovation!');
+		return await message.channel.send(':x: This command is currently undergoing renovation!');
 		/*if (!isAdmin(message.member)) return message.channel.send(':no_entry: You need the `MANAGE_GUILD`-permission to do this!');
 		let mode = message.content.split(' ').splice(1)[0];
 		let count = parseInt(message.content.split(' ').splice(2)[0]);
@@ -230,7 +238,7 @@ client.on('message', async (message) => {
 		if (!role) return message.channel.send(`:x: Invalid role. Use \`${prefix}role <mode> <count> <duration> <role mention or ID>\``);
 
 		let botMsg = await message.channel.send(':hotsprings: Saving...');
-		return database.setRole(message.guild.id, mode, count, duration, role.id)
+		return await database.setRole(message.guild.id, mode, count, duration, role.id)
 			.then(() => { botMsg.edit(`:white_check_mark: I will give the role called ${role.name} when ${(mode == 'each' ? `each ${count} is counted` : `someone reach ${count}`)} and the role will ${(duration == 'permanent' ? 'stay permanent until removed or a new role reward is set.' : 'stay until someone else get the role.')}`) })
 			.catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') });*/
 	} else if (['set-starting-count','setstartingcount','startingcount','starting-count','set-count','setcount','set-start-count','setstartcount','startcount','start-count'].includes(cmd)) {
@@ -242,7 +250,7 @@ client.on('message', async (message) => {
 		if (isNaN(count)) return message.channel.send(`:x: Invalid count. Use \`${prefix}set-starting-count <channel> <count>\``);
 
 		let botMsg = await message.channel.send(':hotsprings: Saving...');
-		return database.setCount(channel.id, count)
+		return await database.setCount(channel.id, count)
 			.then(() => { botMsg.edit(`:white_check_mark: The count for ${channel.id === message.channel.id ? 'this channel' : channel.toString()} has been set to ${count}.`) })
 			.catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') });
 	} else if (['set-count-by','set-counting-by','setcountby','setcountingby','count-by','counting-by','countby','countingby'].includes(cmd)) {
@@ -254,7 +262,7 @@ client.on('message', async (message) => {
 		if (by === 0 || isNaN(by)) return message.channel.send(`:x: Invalid amount. Use \`${prefix}set-count-by <channel> <by>\``);
 
 		let botMsg = await message.channel.send(':hotsprings: Saving...');
-		return database.setCountBy(channel.id, by)
+		return await database.setCountBy(channel.id, by)
 			.then(() => { botMsg.edit(`:white_check_mark: You will now count by ${by} in ${channel.id === message.channel.id ? 'this channel' : channel.toString()}.`) })
 			.catch(() => { botMsg.edit(':anger: Could not save to the database. Try again later.') });
 	} else if (['eval','js','javascript'].includes(cmd) && message.author.id === '269247101697916939') {
@@ -314,8 +322,8 @@ client.on('message', async (message) => {
 		}
 		return;
 	} else if (['invite'].includes(cmd)) {
-		return client.generateInvite(['MANAGE_CHANNELS','VIEW_AUDIT_LOG','VIEW_CHANNEL','SEND_MESSAGES','MANAGE_MESSAGES','EMBED_LINKS','READ_MESSAGE_HISTORY','USE_EXTERNAL_EMOJIS','MANAGE_ROLES','MANAGE_WEBHOOKS']).then((link) => {
-			return message.channel.send({
+		return client.generateInvite(['MANAGE_CHANNELS','VIEW_AUDIT_LOG','VIEW_CHANNEL','SEND_MESSAGES','MANAGE_MESSAGES','EMBED_LINKS','READ_MESSAGE_HISTORY','USE_EXTERNAL_EMOJIS','MANAGE_ROLES','MANAGE_WEBHOOKS']).then(async(link) => {
+			await message.channel.send({
 				embed: {
 					color: 0x3779FA,
 					title: `Thank you for using ${client.user.username}!`,
@@ -327,12 +335,12 @@ client.on('message', async (message) => {
 			});
 		}).catch(console.error);
 	} else if (RegExp(`^(<@!?${client.user.id}>)`).test(content) || cmd === 'prefix') {
-		return message.channel.send(`:wave: My prefix is \`${prefix}\`, for help type \`${prefix}help\`.`);
+		return await message.channel.send(`:wave: My prefix is \`${prefix}\`, for help type \`${prefix}help\`.`);
 	} else if (['ping'].includes(cmd)) {
 		let msg = await message.channel.send(':part_alternation_mark: Pinging...');
 		return msg.edit(`:signal_strength: Latency is \`${(msg.createdTimestamp - message.createdTimestamp)}ms\` and API Latency is \`${Math.round(client.ws.ping)}ms\`.`);
 	} else if (['help','cmds','commands'].includes(cmd)) {
-		message.channel.send({
+		await message.channel.send({
 			embed: {
 				title: 'Commands',
 				//description: `\`${prefix}help\` - displays this help embed\n\`${prefix}ping\` - gives you the bots ping\n\`${prefix}link [channel]\` - setup a counting channel\n\t**Arguments**\n\t\`[channel]\` - can either be the name, a mention or ID of a channel. Leave empty to use the current channel.\n\t**Examples**\n\t\`${prefix}link #counting-channel\`\n\`${prefix}unlink\` - unlink the current counting channel\n\`${prefix}reset\` - reset the count back to 0\n\`${prefix}toggle [module]\` - toggle different modules\n\t**Arguments**\n\t\`[module]\` - can be a name of a module you want to toggle. Leave empty to get a list of modules.\n\t**Examples**\n\t\`${prefix}toggle webhook\`\n\t**Modules**\n\t\`allow-spam\` - allows members to count more than once in a row, without someone else typing between.\n\t\`talking\` - allows members to talk after the count, ex. '1337 hello Admin!'\n\t\`reposting\` - makes the bot repost the message, preventing the user to edit or delete the count afterwards.\n\t\`webhook\` - makes the reposted message be a webhook. (Requires the 'reposting'-module)\n\t\`recover\` - makes the bot delete all new messages while it's been offline. In a nutshell, resumes the counting. This feature is BETA, so use it at your own risk.\n\`${prefix}subscribe <count>\` - subscribe to a count in the guild\n\t**Arguments**\n\t\`<count>\` - is the count you want to get notified of.\n\t**Examples**\n\t\`${prefix}subscribe 10000\`\n\`${prefix}topic [topic]\` - set the topic\n\t**Arguments**\n\t\`[topic]\` - can be what you want to be displayed in the topic. Leave empty to reset it. Set to 'disable' to disable. Use \`{{COUNT}}\` as a placeholder to display the current count.\n\t**Examples**\n\t\`${prefix}topic Test topic!\`\n\t\`${prefix}topic next count is {{COUNT}}\`\n\`${prefix}set <count>\` - set the count to a specific count\n\t**Arguments**\n\t\`<count>\` - is whatever you want to set the count to.\n\`${prefix}role <mode> <count> <duration> <role...>\` - setup a role prize so people can get roles when they count\n\t**Arguments**\n\t\`<mode>\` - setting to "each" <count>, ex. 1000 will accept 1k,2k,3k. Setting to "only" will set it to only be.\n\t\`<count>\` - count that the bot will check on.\n\t\`<duration>\` - setting to "permanent" will make the role permanent. Setting it to "temporary" will allow 1 person to have the role, when someone gets the role, the other person gets kicked out of the role.\n\t\`<role...>\` - either the name, mention, or ID of a role.\n\t**Examples**\n\t\`c!role each 50 temporary Counting Master\``
@@ -342,7 +350,7 @@ client.on('message', async (message) => {
 				}
 			}
 		});
-		message.channel.send({
+		await message.channel.send({
 			embed: {
 				title: 'Commands',
 				//description: `\`${prefix}help\` - displays this help embed\n\`${prefix}ping\` - gives you the bots ping\n\`${prefix}link [channel]\` - setup a counting channel\n\t**Arguments**\n\t\`[channel]\` - can either be the name, a mention or ID of a channel. Leave empty to use the current channel.\n\t**Examples**\n\t\`${prefix}link #counting-channel\`\n\`${prefix}unlink\` - unlink the current counting channel\n\`${prefix}reset\` - reset the count back to 0\n\`${prefix}toggle [module]\` - toggle different modules\n\t**Arguments**\n\t\`[module]\` - can be a name of a module you want to toggle. Leave empty to get a list of modules.\n\t**Examples**\n\t\`${prefix}toggle webhook\`\n\t**Modules**\n\t\`allow-spam\` - allows members to count more than once in a row, without someone else typing between.\n\t\`talking\` - allows members to talk after the count, ex. '1337 hello Admin!'\n\t\`reposting\` - makes the bot repost the message, preventing the user to edit or delete the count afterwards.\n\t\`webhook\` - makes the reposted message be a webhook. (Requires the 'reposting'-module)\n\t\`recover\` - makes the bot delete all new messages while it's been offline. In a nutshell, resumes the counting. This feature is BETA, so use it at your own risk.\n\`${prefix}subscribe <count>\` - subscribe to a count in the guild\n\t**Arguments**\n\t\`<count>\` - is the count you want to get notified of.\n\t**Examples**\n\t\`${prefix}subscribe 10000\`\n\`${prefix}topic [topic]\` - set the topic\n\t**Arguments**\n\t\`[topic]\` - can be what you want to be displayed in the topic. Leave empty to reset it. Set to 'disable' to disable. Use \`{{COUNT}}\` as a placeholder to display the current count.\n\t**Examples**\n\t\`${prefix}topic Test topic!\`\n\t\`${prefix}topic next count is {{COUNT}}\`\n\`${prefix}set <count>\` - set the count to a specific count\n\t**Arguments**\n\t\`<count>\` - is whatever you want to set the count to.\n\`${prefix}role <mode> <count> <duration> <role...>\` - setup a role prize so people can get roles when they count\n\t**Arguments**\n\t\`<mode>\` - setting to "each" <count>, ex. 1000 will accept 1k,2k,3k. Setting to "only" will set it to only be.\n\t\`<count>\` - count that the bot will check on.\n\t\`<duration>\` - setting to "permanent" will make the role permanent. Setting it to "temporary" will allow 1 person to have the role, when someone gets the role, the other person gets kicked out of the role.\n\t\`<role...>\` - either the name, mention, or ID of a role.\n\t**Examples**\n\t\`c!role each 50 temporary Counting Master\``
@@ -390,14 +398,14 @@ client.on('recalculateNumber', async (message) => {
 			let fetched_count = messages.first() ? parseInt(messages.first().content) : 0;
 			if (/*message.channel.lastMessageID*/_count.message === message.id) {
 				if (fetched_count === (count - countby)) {
-					database.subtractFromCount(message.channel.id, message.author.id); count -= countby;
+					await database.subtractFromCount(message.channel.id, message.author.id); count -= countby;
 				} else {
 					if (count === fetched_count) return;
-					database.setCount(message.channel.id, fetched_count);
+					await database.setCount(message.channel.id, fetched_count);
 				}
 			} else {
 				if (message.channel.messages.has(_count.message/*message.channel.lastMessageID*/)) return;
-				database.setCount(message.channel.id, fetched_count);
+				await database.setCount(message.channel.id, fetched_count);
 			}
 		}
 	}
