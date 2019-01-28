@@ -73,7 +73,7 @@ module.exports = function(client) { return {
 
             let channel = await getChannel(channelid);
             channel.channelid = savedChannels[channelid].channelid;
-            channel.save().then(resolve).catch(reject);
+            await channel.save().then(resolve).catch(reject);
         });
     },
     getCountingChannel(channelid) {
@@ -158,7 +158,7 @@ module.exports = function(client) { return {
 
             let channel = await getChannel(channelid);
             channel.modules = savedChannels[channelid].modules
-            channel.save().then(resolve).catch(reject);
+            await channel.save().then(resolve).catch(reject);
         })
     },
     getModules(channelid) {
