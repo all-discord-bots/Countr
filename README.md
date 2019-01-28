@@ -7,7 +7,7 @@
 
 <img src="https://api.url2png.com/v6/P4DF2F8BC83648/609544fe5324471cde75046e09c88005/png/?thumbnail_max_width=851&url=https%3A%2F%2Fdavid-dm.org%2Fall-discord-bots%2FCountr%3Fview%3Dlist&viewport=1280x2000" data-canonical-src="https://api.url2png.com/v6/P4DF2F8BC83648/609544fe5324471cde75046e09c88005/png/?thumbnail_max_width=851&url=https%3A%2F%2Fdavid-dm.org%2Fall-discord-bots%2FCountr%3Fview%3Dlist&viewport=1280x2000" width="800" height="1330px" />
 
-<iframe src="https://david-dm.org/all-discord-bots/Countr?view=list" height="200" width="300" />
+[[embed url=https://david-dm.org/all-discord-bots/Countr?view=list]]
 
 # Countr
 
