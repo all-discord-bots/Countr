@@ -4,7 +4,7 @@
   "description": "A bot that can manage a counting channel in your guild!",
   "main": "app.js",
   "dependencies": {
-    "blapi": "^1.0.2",
+    "blapi": "^1.1.0",
     "bufferutil": "^4.0.1",
     "dblapi.js": "^2.3.0",
     "discord.js": "github:discordjs/discord.js#master",
