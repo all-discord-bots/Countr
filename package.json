@@ -10,7 +10,7 @@
     "discord.js": "github:discordjs/discord.js#master",
     "erlpack": "github:hammerandchisel/erlpack",
     "fs": "0.0.2",
-    "mongoose": "^5.4.22",
+    "mongoose": "^5.5.0",
     "require-from-url": "^3.1.2",
     "uws": "^100.0.1"
   },
